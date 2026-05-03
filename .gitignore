@@ -1,0 +1,12 @@
+# Credenciais — NUNCA subir para o GitHub
+config.js
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node (caso alguém adicione build tools)
+node_modules/
+.env
+.env.local

@@ -1,0 +1,21 @@
+[build]
+  # Gera config.js a partir das variáveis de ambiente definidas no painel do Netlify
+  # Configure em: Site → Site configuration → Environment variables
+  #   SUPABASE_URL      = https://seu-projeto.supabase.co
+  #   SUPABASE_ANON_KEY = eyJ...sua_chave_anon
+  command = "printf \"window.SUPABASE_URL='%s';\\nwindow.SUPABASE_ANON_KEY='%s';\" \"$SUPABASE_URL\" \"$SUPABASE_ANON_KEY\" > config.js"
+  publish = "."
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control         = "public, max-age=0, must-revalidate"
+    X-Frame-Options       = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy       = "strict-origin-when-cross-origin"
+
+# config.js gerado pelo build nunca deve ser cacheado
+[[headers]]
+  for = "/config.js"
+  [headers.values]
+    Cache-Control = "no-store"
