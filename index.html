@@ -184,32 +184,7 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
 
 <!-- RESUMO -->
 <section id="sec-resumo" class="section">
-  <div class="section-title">📊 Resumo</div>
-  <div class="month-nav">
-    <button onclick="changeMonth(-1)">‹</button>
-    <div style="flex:1;text-align:center;font-weight:600;color:#111827" id="res-month-label"></div>
-    <button onclick="changeMonth(1)">›</button>
-  </div>
-  <div class="card">
-    <div style="font-weight:600;color:#111827;margin-bottom:12px">Resumo do Mês</div>
-    <div class="stat-row"><span style="color:#6b7280">💰 Renda Total</span><span style="font-weight:600;color:#059669" id="res-renda">R$ 0,00</span></div>
-    <div class="stat-row"><span style="color:#6b7280">📋 Contas Fixas</span><span style="font-weight:600;color:#374151" id="res-contas">R$ 0,00</span></div>
-    <div class="stat-row"><span style="color:#6b7280">🚗 Gastos Carro</span><span style="font-weight:600;color:#374151" id="res-carro">R$ 0,00</span></div>
-    <div class="stat-row"><span style="color:#6b7280">💼 Gastos Corretagem</span><span style="font-weight:600;color:#374151" id="res-corretagem">R$ 0,00</span></div>
-    <div class="stat-row"><span style="color:#6b7280">💳 Dívidas (mínimo)</span><span style="font-weight:600;color:#374151" id="res-dividas">R$ 0,00</span></div>
-    <div class="stat-row" style="border-top:2px solid #f3f4f6;margin-top:8px;padding-top:14px">
-      <span style="font-weight:700;color:#111827;font-size:15px">Sobra / Déficit</span>
-      <span style="font-size:20px;font-weight:800" id="res-sobra">R$ 0,00</span>
-    </div>
-  </div>
-  <div class="card">
-    <div style="font-weight:600;color:#111827;margin-bottom:12px">Distribuição</div>
-    <div style="position:relative;height:200px"><canvas id="res-chart"></canvas></div>
-  </div>
-  <div class="card">
-    <div style="font-weight:600;color:#111827;margin-bottom:12px">🎯 Plano de Quitação</div>
-    <div id="res-quitacao"></div>
-  </div>
+  <div id="resumo-content"></div>
 </section>
 
 </main>
@@ -313,7 +288,8 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
     <input type="hidden" id="custo-edit-id">
     <div class="type-switch">
       <button class="type-btn active" id="custo-btn-car" onclick="setCustoType('car')">🚗 Carro</button>
-      <button class="type-btn" id="custo-btn-brok" onclick="setCustoType('brokerage')">💼 Corretagem</button>
+      <button class="type-btn" id="custo-btn-brok" onclick="setCustoType('brokerage')">💼 Correto.</button>
+      <button class="type-btn" id="custo-btn-var" onclick="setCustoType('variable')">🛒 Variável</button>
     </div>
     <div class="form-group"><label class="form-label">Categoria</label>
       <select class="form-select" id="custo-cat"></select>
@@ -323,6 +299,43 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
     <div class="form-group"><label class="form-label">Observação (opcional)</label><input type="text" class="form-input" id="custo-note" placeholder="Detalhes..."></div>
     <button class="btn-primary" onclick="saveCost()">Salvar</button>
     <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-custo')">Cancelar</button>
+  </div></div>
+</div>
+
+<!-- Financiamento -->
+<div class="modal" id="modal-financing">
+  <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
+    <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:18px" id="fin-title">Novo Financiamento</h3>
+    <input type="hidden" id="fin-edit-id">
+    <div class="form-group"><label class="form-label">Nome / Descrição</label><input type="text" class="form-input" id="fin-name" placeholder="Ex: Apartamento Bloco B, Fiat Argo..."></div>
+    <div class="form-group"><label class="form-label">Tipo</label>
+      <select class="form-select" id="fin-type"><option value="imovel">🏠 Imóvel</option><option value="veiculo">🚗 Veículo</option><option value="outro">📦 Outro</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Valor do Bem (R$)</label><input type="number" inputmode="decimal" class="form-input" id="fin-asset-value" placeholder="Ex: 350000" step="0.01" min="0"></div>
+    <div class="form-group"><label class="form-label">Valor Financiado (R$)</label><input type="number" inputmode="decimal" class="form-input" id="fin-financed" placeholder="Ex: 280000" step="0.01" min="0" oninput="updateFinPreview()"></div>
+    <div class="form-group"><label class="form-label">Taxa de Juros Mensal (%)</label><input type="number" inputmode="decimal" class="form-input" id="fin-rate" placeholder="Ex: 0.62" step="0.001" min="0" oninput="updateFinPreview()"></div>
+    <div class="form-group"><label class="form-label">Prazo Total (meses)</label><input type="number" class="form-input" id="fin-term" placeholder="Ex: 360" min="1" oninput="updateFinPreview()"></div>
+    <div class="form-group"><label class="form-label">Parcela Atual (nº da parcela)</label><input type="number" class="form-input" id="fin-current" placeholder="Ex: 24" min="1"></div>
+    <div class="form-group"><label class="form-label">Sistema de Amortização</label>
+      <div class="type-switch" style="margin-bottom:0">
+        <button class="type-btn active" id="fin-btn-price" onclick="setFinAmortType('price')">PRICE (parcela fixa)</button>
+        <button class="type-btn" id="fin-btn-sac" onclick="setFinAmortType('sac')">SAC (amort. constante)</button>
+      </div>
+    </div>
+    <div id="fin-preview" style="background:#f0fdf4;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#065f46;display:none;line-height:1.6"></div>
+    <button class="btn-primary" onclick="saveFinancing()">Salvar</button>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-financing')">Cancelar</button>
+  </div></div>
+</div>
+
+<!-- Amortização Detalhe -->
+<div class="modal" id="modal-amort">
+  <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
+    <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:6px" id="amort-title">Amortização</h3>
+    <div id="amort-summary" style="margin-bottom:12px"></div>
+    <div style="position:relative;height:190px;margin-bottom:16px"><canvas id="amort-chart"></canvas></div>
+    <div id="amort-table" style="font-size:12px;overflow-x:auto"></div>
+    <button class="btn-secondary" style="width:100%;margin-top:16px;text-align:center" onclick="closeModal('modal-amort')">Fechar</button>
   </div></div>
 </div>
 
@@ -451,6 +464,8 @@ const DEBT_COLORS   = ['#ef4444','#f97316','#f59e0b','#8b5cf6','#ec4899','#06b6d
 const BANK_COLORS   = ['#10b981','#3b82f6','#8b5cf6','#f59e0b','#ec4899','#06b6d4','#f97316','#6b7280'];
 const CAR_CATS      = ['Combustível','Manutenção','IPVA','Seguro','Multa','Estacionamento','Outros'];
 const BROK_CATS     = ['Material Gráfico','Publicidade/Ads','Plataforma','Deslocamento','Outros'];
+const VARIABLE_CATS = ['Alimentação','Lazer','Saúde','Vestuário','Beleza','Educação','Transporte','Outros'];
+const FIN_COLORS    = ['#3b82f6','#f97316','#8b5cf6','#10b981','#ec4899','#06b6d4'];
 
 function mkDefault() {
   return {
@@ -463,6 +478,7 @@ function mkDefault() {
     receivables: [],
     costs: [],
     kmLog: [],
+    financings: [],
     carSetup: { kmPerLiter: 10, fuelPrice: 6.0 }
   };
 }
@@ -479,6 +495,7 @@ function loadDb() {
     if (!Array.isArray(merged.receivables)) merged.receivables = [];
     if (!Array.isArray(merged.costs)) merged.costs = [];
     if (!Array.isArray(merged.kmLog)) merged.kmLog = [];
+    if (!Array.isArray(merged.financings)) merged.financings = [];
     return merged;
   } catch { return mkDefault(); }
 }
@@ -488,8 +505,9 @@ let currentSection = 'dashboard';
 let currentMonth   = todayStr().substring(0, 7);
 let incType        = 'uber';
 let custoType      = 'car';
-let subTab         = { renda: 'lancamentos', gastos: 'contas', banco: 'contas' };
+let subTab         = { renda: 'lancamentos', gastos: 'contas', banco: 'contas', resumo: 'orcamento' };
 let resChart       = null;
+let amortChart     = null;
 let roomMode       = 'new';
 let generatedCode  = '';
 
@@ -554,6 +572,7 @@ function loadMerge(data) {
   if (!Array.isArray(merged.receivables)) merged.receivables = [];
   if (!Array.isArray(merged.costs)) merged.costs = [];
   if (!Array.isArray(merged.kmLog)) merged.kmLog = [];
+  if (!Array.isArray(merged.financings)) merged.financings = [];
   return merged;
 }
 
@@ -620,10 +639,13 @@ document.getElementById('fab-btn').addEventListener('click', () => {
     else openReceivableModal();
   } else if (currentSection==='gastos') {
     if (subTab.gastos==='contas') openBillModal();
-    else openCustoModal(subTab.gastos==='carro'?'car':'brokerage');
+    else if (subTab.gastos==='carro') openCustoModal('car');
+    else if (subTab.gastos==='corretagem') openCustoModal('brokerage');
+    else openCustoModal('variable');
   } else if (currentSection==='banco') {
     if (subTab.banco==='contas') openBankAccountModal();
-    else openDebtModal();
+    else if (subTab.banco==='dividas') openDebtModal();
+    else openFinancingModal();
   } else if (currentSection==='dashboard') {
     openIncomeModal();
   }
@@ -787,13 +809,14 @@ function deleteReceivable(id) {
 // ============================================================
 // COSTS (Carro / Corretagem)
 // ============================================================
-const CAT_MAP = { car: CAR_CATS, brokerage: BROK_CATS };
+const CAT_MAP = { car: CAR_CATS, brokerage: BROK_CATS, variable: VARIABLE_CATS };
 function setCustoType(t) {
   custoType=t;
   document.getElementById('custo-btn-car').classList.toggle('active',t==='car');
   document.getElementById('custo-btn-brok').classList.toggle('active',t==='brokerage');
+  document.getElementById('custo-btn-var').classList.toggle('active',t==='variable');
   const sel=document.getElementById('custo-cat');
-  sel.innerHTML=CAT_MAP[t].map(c=>`<option>${c}</option>`).join('');
+  sel.innerHTML=(CAT_MAP[t]||CAR_CATS).map(c=>`<option>${c}</option>`).join('');
 }
 function openCustoModal(type, editId) {
   document.getElementById('custo-edit-id').value=editId||'';
@@ -818,6 +841,163 @@ function deleteCost(id) {
   if(!confirm('Remover este gasto?')) return;
   db.costs=db.costs.filter(c=>c.id!==id);
   saveDb(); renderSection(currentSection);
+}
+
+// ============================================================
+// FINANCINGS
+// ============================================================
+let finAmortType = 'price';
+
+function calcAmortization(f) {
+  const r=f.rate/100, n=f.termMonths, pv=f.financedAmount;
+  let bal=pv; const sched=[];
+  if(f.amortType==='price') {
+    const pmt=r>0?pv*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1):pv/n;
+    for(let i=1;i<=n;i++){const interest=bal*r,amort=pmt-interest;bal=Math.max(0,bal-amort);sched.push({period:i,pmt,interest,amort,balance:bal});}
+  } else {
+    const amort=pv/n;
+    for(let i=1;i<=n;i++){const interest=bal*r,pmt=amort+interest;bal=Math.max(0,bal-amort);sched.push({period:i,pmt,interest,amort,balance:bal});}
+  }
+  return sched;
+}
+
+function financingRemaining(f) {
+  const paid=Math.max(0,(f.currentInstallment||1)-1);
+  if(paid===0) return f.financedAmount;
+  const sched=calcAmortization(f);
+  return sched[Math.min(paid,sched.length)-1]?.balance??f.financedAmount;
+}
+
+function setFinAmortType(t) {
+  finAmortType=t;
+  document.getElementById('fin-btn-price').classList.toggle('active',t==='price');
+  document.getElementById('fin-btn-sac').classList.toggle('active',t==='sac');
+  updateFinPreview();
+}
+
+function updateFinPreview() {
+  const pv=parseFloat(document.getElementById('fin-financed').value)||0;
+  const r=parseFloat(document.getElementById('fin-rate').value)||0;
+  const n=parseInt(document.getElementById('fin-term').value)||0;
+  const el=document.getElementById('fin-preview');
+  if(!pv||!n){el.style.display='none';return;}
+  el.style.display='block';
+  const rate=r/100;
+  if(finAmortType==='price'){
+    const pmt=rate>0?pv*(rate*Math.pow(1+rate,n))/(Math.pow(1+rate,n)-1):pv/n;
+    el.innerHTML=`<strong>PRICE</strong> — Parcela fixa: <strong>${fmt(pmt)}</strong><br>Total pago: ${fmt(pmt*n)} · Juros totais: ${fmt(pmt*n-pv)}`;
+  } else {
+    const amort=pv/n, first=amort+pv*rate, last=amort+amort*rate;
+    el.innerHTML=`<strong>SAC</strong> — 1ª parcela: <strong>${fmt(first)}</strong> → última: <strong>${fmt(last)}</strong><br>Total estimado: ${fmt((first+last)/2*n)} · Juros: ${fmt((first+last)/2*n-pv)}`;
+  }
+}
+
+function openFinancingModal(editId) {
+  document.getElementById('fin-edit-id').value=editId||'';
+  document.getElementById('fin-title').textContent=editId?'Editar Financiamento':'Novo Financiamento';
+  finAmortType='price';
+  document.getElementById('fin-btn-price').classList.add('active');
+  document.getElementById('fin-btn-sac').classList.remove('active');
+  if(editId){
+    const f=db.financings.find(f=>f.id===editId);
+    if(f){
+      document.getElementById('fin-name').value=f.name;
+      document.getElementById('fin-type').value=f.type;
+      document.getElementById('fin-asset-value').value=f.assetValue||'';
+      document.getElementById('fin-financed').value=f.financedAmount;
+      document.getElementById('fin-rate').value=f.rate;
+      document.getElementById('fin-term').value=f.termMonths;
+      document.getElementById('fin-current').value=f.currentInstallment||1;
+      finAmortType=f.amortType||'price';
+      document.getElementById('fin-btn-price').classList.toggle('active',finAmortType==='price');
+      document.getElementById('fin-btn-sac').classList.toggle('active',finAmortType==='sac');
+      updateFinPreview();
+    }
+  } else {
+    ['fin-name','fin-asset-value','fin-financed','fin-rate','fin-term'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('fin-current').value='1';
+    document.getElementById('fin-type').value='imovel';
+    document.getElementById('fin-preview').style.display='none';
+  }
+  openModal('modal-financing');
+}
+
+function saveFinancing() {
+  const editId=document.getElementById('fin-edit-id').value;
+  const name=document.getElementById('fin-name').value.trim();
+  const type=document.getElementById('fin-type').value;
+  const assetValue=parseFloat(document.getElementById('fin-asset-value').value)||0;
+  const financedAmount=parseFloat(document.getElementById('fin-financed').value);
+  const rate=parseFloat(document.getElementById('fin-rate').value)||0;
+  const termMonths=parseInt(document.getElementById('fin-term').value);
+  const currentInstallment=parseInt(document.getElementById('fin-current').value)||1;
+  if(!name) return alert('Digite o nome do financiamento.');
+  if(!financedAmount||financedAmount<=0) return alert('Digite o valor financiado.');
+  if(!termMonths||termMonths<=0) return alert('Digite o prazo em meses.');
+  const obj={name,type,assetValue,financedAmount,rate,termMonths,currentInstallment,amortType:finAmortType};
+  if(editId){const f=db.financings.find(f=>f.id===editId);if(f)Object.assign(f,obj);}
+  else db.financings.push({id:uid(),...obj,color:FIN_COLORS[db.financings.length%FIN_COLORS.length]});
+  saveDb(); closeModal('modal-financing'); renderSection(currentSection);
+}
+
+function deleteFinancing(id) {
+  if(!confirm('Remover este financiamento?')) return;
+  db.financings=db.financings.filter(f=>f.id!==id);
+  saveDb(); renderSection(currentSection);
+}
+
+function openAmortModal(id) {
+  const f=db.financings.find(f=>f.id===id); if(!f) return;
+  const sched=calcAmortization(f);
+  const paidIdx=Math.max(0,(f.currentInstallment||1)-1);
+  const remaining=financingRemaining(f);
+  const totalPaid=sched.slice(0,paidIdx).reduce((s,r)=>s+r.pmt,0);
+  const totalInterest=sched.reduce((s,r)=>s+r.interest,0);
+  const typeIcon={imovel:'🏠',veiculo:'🚗',outro:'📦'};
+  document.getElementById('amort-title').textContent=typeIcon[f.type]+' '+f.name+' — '+f.amortType.toUpperCase();
+  document.getElementById('amort-summary').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:#fee2e2;border-radius:10px;padding:10px"><div style="font-size:11px;color:#7f1d1d">Saldo Devedor</div><div style="font-size:17px;font-weight:700;color:#dc2626">${fmt(remaining)}</div></div>
+      <div style="background:#f3f4f6;border-radius:10px;padding:10px"><div style="font-size:11px;color:#374151">Parcela</div><div style="font-size:17px;font-weight:700;color:#374151">${f.currentInstallment||1}/${f.termMonths}</div></div>
+      <div style="background:#fef3c7;border-radius:10px;padding:10px"><div style="font-size:11px;color:#92400e">Total Juros</div><div style="font-size:17px;font-weight:700;color:#d97706">${fmt(totalInterest)}</div></div>
+      <div style="background:#eff6ff;border-radius:10px;padding:10px"><div style="font-size:11px;color:#1e40af">Já Pago</div><div style="font-size:17px;font-weight:700;color:#2563eb">${fmt(totalPaid)}</div></div>
+    </div>`;
+  // Build chart data (sample ~24 points max)
+  const step=Math.max(1,Math.floor(sched.length/24));
+  const pts=sched.filter((_,i)=>i%step===0||i===sched.length-1);
+  const lbls=pts.map(r=>'P'+r.period);
+  const bals=pts.map(r=>r.balance);
+  const pmts=pts.map(r=>parseFloat(r.pmt.toFixed(2)));
+  const ints=pts.map(r=>parseFloat(r.interest.toFixed(2)));
+  if(amortChart){amortChart.destroy();amortChart=null;}
+  setTimeout(()=>{
+    const ctx=document.getElementById('amort-chart')?.getContext('2d'); if(!ctx) return;
+    amortChart=new Chart(ctx,{type:'line',data:{labels:lbls,datasets:[
+      {label:'Saldo',data:bals,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.1)',fill:true,tension:.4,pointRadius:0},
+      {label:'Parcela',data:pmts,borderColor:'#3b82f6',backgroundColor:'transparent',tension:.4,pointRadius:0},
+      {label:'Juros',data:ints,borderColor:'#f59e0b',backgroundColor:'transparent',tension:.4,pointRadius:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:8}}},scales:{y:{ticks:{callback:v=>v>=1000?'R$'+(v/1000).toFixed(0)+'k':v.toFixed(0),font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+  },50);
+  // Amortization table: first 6 rows + current + last
+  const rows=[...new Set([0,1,2,3,4,5,paidIdx>5?paidIdx:-1,sched.length-1].filter(v=>v>=0&&v<sched.length))].sort((a,b)=>a-b);
+  let tbl=`<div style="font-weight:600;color:#374151;margin-bottom:8px;font-size:13px">Tabela de Amortização</div><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f9fafb"><th style="padding:6px 4px;text-align:center;color:#6b7280;font-weight:500;font-size:11px">Parc.</th><th style="padding:6px 4px;text-align:right;color:#6b7280;font-weight:500;font-size:11px">Parcela</th><th style="padding:6px 4px;text-align:right;color:#6b7280;font-weight:500;font-size:11px">Juros</th><th style="padding:6px 4px;text-align:right;color:#6b7280;font-weight:500;font-size:11px">Amort.</th><th style="padding:6px 4px;text-align:right;color:#6b7280;font-weight:500;font-size:11px">Saldo</th></tr></thead><tbody>`;
+  let lastIdx=-1;
+  rows.forEach(idx=>{
+    if(lastIdx>=0&&idx>lastIdx+1) tbl+='<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:4px;font-size:11px">···</td></tr>';
+    const r=sched[idx];
+    const isCur=idx===paidIdx-1, isPaid=idx<paidIdx;
+    tbl+=`<tr style="background:${isCur?'#d1fae5':isPaid?'#f9fafb':'white'};border-bottom:1px solid #f3f4f6">
+      <td style="padding:6px 4px;text-align:center;font-size:12px;color:${isCur?'#059669':'#374151'};font-weight:${isCur?'700':'400'}">${r.period}${isCur?' ✓':''}</td>
+      <td style="padding:6px 4px;text-align:right;font-size:12px">${fmt(r.pmt)}</td>
+      <td style="padding:6px 4px;text-align:right;font-size:12px;color:#d97706">${fmt(r.interest)}</td>
+      <td style="padding:6px 4px;text-align:right;font-size:12px">${fmt(r.amort)}</td>
+      <td style="padding:6px 4px;text-align:right;font-size:12px;color:#dc2626">${fmt(r.balance)}</td>
+    </tr>`;
+    lastIdx=idx;
+  });
+  tbl+='</tbody></table>';
+  document.getElementById('amort-table').innerHTML=tbl;
+  openModal('modal-amort');
 }
 
 // ============================================================
@@ -1119,7 +1299,7 @@ function renderRenda() {
 function renderGastos() {
   const ym=currentMonth;
   const pendAmt=pendingBillsAmt(ym), paidAmt=paidBillsAmt(ym);
-  const carAmt=costsTotal(ym,'car'), brokAmt=costsTotal(ym,'brokerage');
+  const carAmt=costsTotal(ym,'car'), brokAmt=costsTotal(ym,'brokerage'), varAmt=costsTotal(ym,'variable');
   let subContent='';
   if(subTab.gastos==='contas') {
     subContent=db.bills.length?[...db.bills].sort((a,b)=>a.dueDay-b.dueDay).map(b=>{
@@ -1129,91 +1309,217 @@ function renderGastos() {
     :'<div class="empty-state"><div style="font-size:36px">📋</div><div style="font-size:14px;font-weight:500;margin-top:8px">Sem contas</div><div style="font-size:13px">Toque em + para adicionar</div></div>';
   } else if(subTab.gastos==='carro') {
     const entries=costsInMonth(ym,'car').sort((a,b)=>b.date.localeCompare(a.date));
-    const todayKm=kmInDay(todayStr()), kmMes=db.kmLog.filter(k=>k.date.startsWith(ym)).reduce((s,k)=>s+k.km,0);
+    const kmMes=db.kmLog.filter(k=>k.date.startsWith(ym)).reduce((s,k)=>s+k.km,0);
     const setup=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:12px;color:#6b7280">Km este mês</div><div style="font-size:18px;font-weight:700;color:#374151">${kmMes} km</div></div><button onclick="openCarSetupModal()" style="background:#f3f4f6;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;color:#374151">⚙️ ${db.carSetup.kmPerLiter}km/L · R$${db.carSetup.fuelPrice}/L</button></div>`;
-    subContent=setup+(entries.length?entries.map(c=>`<div class="list-row"><div class="icon-circle" style="background:#fff7ed">⛽</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#111827">${c.category}${c.note?' — '+c.note:''}</div><div style="font-size:12px;color:#9ca3af">${fmtDate(c.date)}</div></div><div style="text-align:right"><div style="font-weight:600;color:#374151">${fmt(c.amount)}</div><button onclick="deleteCost('${c.id}')" style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:0">remover</button></div></div>`).join('')
+    subContent=setup+(entries.length?entries.map(c=>`<div class="list-row"><div class="icon-circle" style="background:#fff7ed">⛽</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#111827">${c.category}${c.note?' — '+c.note:''}</div><div style="font-size:12px;color:#9ca3af">${fmtDate(c.date)}</div></div><div style="text-align:right"><div style="font-weight:600;color:#374151">${fmt(c.amount)}</div><button onclick="openCustoModal('car','${c.id}')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0">✏️</button> <button onclick="deleteCost('${c.id}')" style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:0">✕</button></div></div>`).join('')
     :'<div class="empty-state" style="padding:16px 0"><div style="font-size:36px">🚗</div><div style="font-size:14px;font-weight:500;margin-top:8px">Sem gastos de carro</div></div>');
-  } else {
+  } else if(subTab.gastos==='corretagem') {
     const entries=costsInMonth(ym,'brokerage').sort((a,b)=>b.date.localeCompare(a.date));
-    subContent=entries.length?entries.map(c=>`<div class="list-row"><div class="icon-circle" style="background:#ede9fe">💼</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#111827">${c.category}${c.note?' — '+c.note:''}</div><div style="font-size:12px;color:#9ca3af">${fmtDate(c.date)}</div></div><div style="text-align:right"><div style="font-weight:600;color:#374151">${fmt(c.amount)}</div><button onclick="deleteCost('${c.id}')" style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:0">remover</button></div></div>`).join('')
+    subContent=entries.length?entries.map(c=>`<div class="list-row"><div class="icon-circle" style="background:#ede9fe">💼</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#111827">${c.category}${c.note?' — '+c.note:''}</div><div style="font-size:12px;color:#9ca3af">${fmtDate(c.date)}</div></div><div style="text-align:right"><div style="font-weight:600;color:#374151">${fmt(c.amount)}</div><button onclick="openCustoModal('brokerage','${c.id}')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0">✏️</button> <button onclick="deleteCost('${c.id}')" style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:0">✕</button></div></div>`).join('')
     :'<div class="empty-state"><div style="font-size:36px">💼</div><div style="font-size:14px;font-weight:500;margin-top:8px">Sem gastos de corretagem</div></div>';
+  } else {
+    // Variáveis
+    const entries=costsInMonth(ym,'variable').sort((a,b)=>b.date.localeCompare(a.date));
+    const catTotals={};
+    entries.forEach(c=>{catTotals[c.category]=(catTotals[c.category]||0)+c.amount;});
+    const catSummary=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).map(([cat,amt])=>
+      `<div class="stat-row"><span style="color:#6b7280">${cat}</span><span style="font-weight:600;color:#a21caf">${fmt(amt)}</span></div>`).join('');
+    subContent=(catSummary?`<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #f3f4f6">${catSummary}</div>`:'')+
+      (entries.length?entries.map(c=>`<div class="list-row"><div class="icon-circle" style="background:#fdf4ff">🛒</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#111827">${c.category}${c.note?' — '+c.note:''}</div><div style="font-size:12px;color:#9ca3af">${fmtDate(c.date)}</div></div><div style="text-align:right"><div style="font-weight:600;color:#374151">${fmt(c.amount)}</div><button onclick="openCustoModal('variable','${c.id}')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0">✏️</button> <button onclick="deleteCost('${c.id}')" style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:0">✕</button></div></div>`).join('')
+      :'<div class="empty-state"><div style="font-size:36px">🛒</div><div style="font-size:14px;font-weight:500;margin-top:8px">Sem gastos variáveis</div><div style="font-size:13px">Alimentação, lazer, saúde...</div></div>');
   }
   document.getElementById('gastos-content').innerHTML=`
     <div class="section-title">💸 Gastos</div>
     <div class="month-nav"><button onclick="changeMonth(-1)">‹</button><div style="flex:1;text-align:center;font-weight:600;color:#111827">${monthLabel(ym)}</div><button onclick="changeMonth(1)">›</button></div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
       <div class="card" style="margin-bottom:0;background:#fee2e2"><div style="font-size:11px;color:#7f1d1d;font-weight:500">📋 Contas</div><div style="font-size:17px;font-weight:700;color:#dc2626;margin-top:4px">${fmt(pendAmt+paidAmt)}</div></div>
       <div class="card" style="margin-bottom:0;background:#fff7ed"><div style="font-size:11px;color:#c2410c;font-weight:500">🚗 Carro</div><div style="font-size:17px;font-weight:700;color:#ea580c;margin-top:4px">${fmt(carAmt)}</div></div>
-      <div class="card" style="margin-bottom:0;background:#ede9fe"><div style="font-size:11px;color:#4c1d95;font-weight:500">💼 Correto.</div><div style="font-size:17px;font-weight:700;color:#7c3aed;margin-top:4px">${fmt(brokAmt)}</div></div>
+      <div class="card" style="margin-bottom:0;background:#ede9fe"><div style="font-size:11px;color:#4c1d95;font-weight:500">💼 Corretagem</div><div style="font-size:17px;font-weight:700;color:#7c3aed;margin-top:4px">${fmt(brokAmt)}</div></div>
+      <div class="card" style="margin-bottom:0;background:#fdf4ff"><div style="font-size:11px;color:#701a75;font-weight:500">🛒 Variáveis</div><div style="font-size:17px;font-weight:700;color:#a21caf;margin-top:4px">${fmt(varAmt)}</div></div>
     </div>
     <div class="sub-tabs">
       <button class="sub-tab-btn ${subTab.gastos==='contas'?'active':''}" onclick="switchSubTab('gastos','contas')">Contas</button>
       <button class="sub-tab-btn ${subTab.gastos==='carro'?'active':''}" onclick="switchSubTab('gastos','carro')">Carro</button>
-      <button class="sub-tab-btn ${subTab.gastos==='corretagem'?'active':''}" onclick="switchSubTab('gastos','corretagem')">Corretagem</button>
+      <button class="sub-tab-btn ${subTab.gastos==='corretagem'?'active':''}" onclick="switchSubTab('gastos','corretagem')">Correto.</button>
+      <button class="sub-tab-btn ${subTab.gastos==='variaveis'?'active':''}" onclick="switchSubTab('gastos','variaveis')">Variáveis</button>
     </div>
     <div class="card">${subContent}</div>`;
 }
 
 function renderBanco() {
-  const banksTotal=bankTotal(), debtsTotal=totalDebt(), net=banksTotal-debtsTotal;
+  const banksTotal=bankTotal(), debtsTotal=totalDebt();
+  const finTotal=db.financings.reduce((s,f)=>s+financingRemaining(f),0);
+  const net=banksTotal-debtsTotal-finTotal;
   let subContent='';
   if(subTab.banco==='contas') {
     subContent=db.bankAccounts.length?db.bankAccounts.map(b=>`<div class="list-row"><div class="color-dot" style="background:${b.color};width:14px;height:14px;border-radius:4px;flex-shrink:0"></div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;color:#111827">${b.bank}</div><div style="font-size:12px;color:#9ca3af">${{corrente:'Conta Corrente',poupanca:'Poupança',digital:'Conta Digital',investimento:'Investimento'}[b.type]||b.type}</div></div><div style="text-align:right"><div style="font-size:18px;font-weight:700;color:${b.balance>=0?'#059669':'#dc2626'}">${b.balance<0?'-':''} ${fmt(Math.abs(b.balance))}</div><div style="display:flex;gap:4px;justify-content:flex-end;margin-top:4px"><button onclick="openBankAccountModal('${b.id}')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px">✏️</button><button onclick="deleteBankAccount('${b.id}')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px">🗑️</button></div></div></div>`).join('')
     :'<div class="empty-state"><div style="font-size:36px">🏦</div><div style="font-size:14px;font-weight:500;margin-top:8px">Nenhuma conta bancária</div><div style="font-size:13px">Toque em + para cadastrar</div></div>';
-  } else {
+  } else if(subTab.banco==='dividas') {
     subContent=db.debts.length?[...db.debts].sort((a,b)=>(b.rate||0)-(a.rate||0)).map((d,idx)=>{
       let payoff='';
       if(d.minPayment>0){let months;if(d.rate>0){const r=d.rate/100;months=d.minPayment>d.remaining*r?Math.ceil(Math.log(d.minPayment/(d.minPayment-d.remaining*r))/Math.log(1+r)):null;}else months=Math.ceil(d.remaining/d.minPayment);if(months){const dt=new Date();dt.setMonth(dt.getMonth()+months);payoff=`<div style="font-size:12px;color:#6b7280;margin-top:6px">⏱ ~${months} meses (${dt.toLocaleDateString('pt-BR',{month:'short',year:'numeric'})})</div>`;}}
       return `<div class="card" style="margin-bottom:10px"><div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px"><div class="color-dot" style="background:${d.color};margin-top:5px"></div><div style="flex:1">${idx===0?'<span style="font-size:11px;background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:99px;font-weight:500;display:inline-block;margin-bottom:4px">Prioridade 🏔️</span>':''}<div style="font-size:16px;font-weight:700;color:#111827">${d.name}</div><div style="font-size:12px;color:#9ca3af">${d.creditor}</div></div><div style="display:flex;gap:4px"><button onclick="openDebtModal('${d.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px">✏️</button><button onclick="deleteDebt('${d.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px">🗑️</button></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="background:#fee2e2;border-radius:10px;padding:10px"><div style="font-size:11px;color:#7f1d1d">Saldo Devedor</div><div style="font-size:17px;font-weight:700;color:#dc2626">${fmt(d.remaining)}</div></div><div style="background:#f3f4f6;border-radius:10px;padding:10px"><div style="font-size:11px;color:#374151">Pgto. Mínimo</div><div style="font-size:17px;font-weight:700;color:#374151">${fmt(d.minPayment)}</div></div></div>${d.rate?`<div style="margin-top:8px;font-size:12px;color:#9ca3af">Juros: ${d.rate}% a.m.</div>`:''}${payoff}</div>`;
     }).join('')
     :'<div class="card"><div class="empty-state"><div style="font-size:36px">🎉</div><div style="font-size:14px;font-weight:500;margin-top:8px">Sem dívidas!</div></div></div>';
+  } else {
+    // Financiamentos
+    const typeIcon={imovel:'🏠',veiculo:'🚗',outro:'📦'};
+    subContent=db.financings.length?db.financings.map(f=>{
+      const remaining=financingRemaining(f);
+      const pct=Math.max(0,Math.min(100,((f.financedAmount-remaining)/f.financedAmount)*100));
+      const sched=calcAmortization(f);
+      const curPmt=sched[Math.min((f.currentInstallment||1)-1,sched.length-1)]?.pmt||0;
+      return `<div class="card" style="margin-bottom:10px">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+          <div class="icon-circle" style="background:${f.color}22;font-size:22px">${typeIcon[f.type]||'📦'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15px;font-weight:700;color:#111827">${f.name}</div>
+            <div style="font-size:12px;color:#9ca3af">${f.amortType.toUpperCase()} · ${f.rate}% a.m. · ${f.termMonths} meses</div>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button onclick="openAmortModal('${f.id}')" style="background:#eff6ff;border:none;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;color:#2563eb">📊</button>
+            <button onclick="openFinancingModal('${f.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px">✏️</button>
+            <button onclick="deleteFinancing('${f.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px">🗑️</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div style="background:#fee2e2;border-radius:10px;padding:10px"><div style="font-size:11px;color:#7f1d1d">Saldo Devedor</div><div style="font-size:17px;font-weight:700;color:#dc2626">${fmt(remaining)}</div></div>
+          <div style="background:#f0fdf4;border-radius:10px;padding:10px"><div style="font-size:11px;color:#065f46">Parcela Atual</div><div style="font-size:17px;font-weight:700;color:#059669">${fmt(curPmt)}</div></div>
+        </div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;display:flex;justify-content:space-between"><span>Parcela ${f.currentInstallment||1} de ${f.termMonths}</span><span>${pct.toFixed(1)}% amortizado</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="background:${f.color};width:${pct}%"></div></div>
+        ${f.assetValue?`<div style="margin-top:8px;font-size:12px;color:#9ca3af">Valor do bem: ${fmt(f.assetValue)}</div>`:''}
+      </div>`;
+    }).join('')
+    :'<div class="card"><div class="empty-state"><div style="font-size:36px">🏠</div><div style="font-size:14px;font-weight:500;margin-top:8px">Sem financiamentos</div><div style="font-size:13px">Toque em + para cadastrar</div></div></div>';
   }
   document.getElementById('banco-content').innerHTML=`
     <div class="section-title">🏦 Banco & Dívidas</div>
     <div class="card" style="background:linear-gradient(135deg,${net>=0?'#10b981,#059669':'#ef4444,#dc2626'});color:white;margin-bottom:12px">
-      <div style="font-size:12px;opacity:.8">Patrimônio Líquido</div>
+      <div style="font-size:12px;opacity:.8">Patrimônio Líquido (Bancos − Dívidas − Financiamentos)</div>
       <div class="big-amount">${net<0?'-':''}${fmt(Math.abs(net))}</div>
-      <div style="display:flex;gap:20px;margin-top:12px">
-        <div><div style="font-size:11px;opacity:.75">Bancos</div><div style="font-size:15px;font-weight:700">${fmt(banksTotal)}</div></div>
-        <div><div style="font-size:11px;opacity:.75">Dívidas</div><div style="font-size:15px;font-weight:700">${fmt(debtsTotal)}</div></div>
-        <div><div style="font-size:11px;opacity:.75">Mín. Mensal</div><div style="font-size:15px;font-weight:700">${fmt(totalMinPay())}</div></div>
+      <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">
+        <div><div style="font-size:11px;opacity:.75">Bancos</div><div style="font-size:14px;font-weight:700">${fmt(banksTotal)}</div></div>
+        <div><div style="font-size:11px;opacity:.75">Dívidas</div><div style="font-size:14px;font-weight:700">${fmt(debtsTotal)}</div></div>
+        <div><div style="font-size:11px;opacity:.75">Financ.</div><div style="font-size:14px;font-weight:700">${fmt(finTotal)}</div></div>
+        <div><div style="font-size:11px;opacity:.75">Mín. Mensal</div><div style="font-size:14px;font-weight:700">${fmt(totalMinPay())}</div></div>
       </div>
     </div>
     <div class="sub-tabs">
-      <button class="sub-tab-btn ${subTab.banco==='contas'?'active':''}" onclick="switchSubTab('banco','contas')">Contas Bancárias</button>
+      <button class="sub-tab-btn ${subTab.banco==='contas'?'active':''}" onclick="switchSubTab('banco','contas')">Contas</button>
       <button class="sub-tab-btn ${subTab.banco==='dividas'?'active':''}" onclick="switchSubTab('banco','dividas')">Dívidas</button>
+      <button class="sub-tab-btn ${subTab.banco==='financiamentos'?'active':''}" onclick="switchSubTab('banco','financiamentos')">Financ.</button>
     </div>
     ${subTab.banco==='contas'?`<div class="card">${subContent}</div>`:subContent}`;
 }
 
 function renderResumo() {
   const ym=currentMonth;
-  document.getElementById('res-month-label').textContent=monthLabel(ym);
   const renda=incomeTotal(ym), contas=pendingBillsAmt(ym)+paidBillsAmt(ym);
-  const carCosts=costsTotal(ym,'car'), brokCosts=costsTotal(ym,'brokerage'), divMin=totalMinPay();
-  const sobra=renda-contas-carCosts-brokCosts-divMin;
-  document.getElementById('res-renda').textContent=fmt(renda);
-  document.getElementById('res-contas').textContent=fmt(contas);
-  document.getElementById('res-carro').textContent=fmt(carCosts);
-  document.getElementById('res-corretagem').textContent=fmt(brokCosts);
-  document.getElementById('res-dividas').textContent=fmt(divMin);
-  const sobraEl=document.getElementById('res-sobra');
-  sobraEl.textContent=(sobra>=0?'+':'-')+fmt(Math.abs(sobra));
-  sobraEl.style.color=sobra>=0?'#059669':'#dc2626';
+  const carCosts=costsTotal(ym,'car'), brokCosts=costsTotal(ym,'brokerage');
+  const varCosts=costsTotal(ym,'variable'), divMin=totalMinPay();
+  const totalGastos=contas+carCosts+brokCosts+varCosts+divMin;
+  const sobra=renda-totalGastos;
+  // Balanço Patrimonial data
+  const banks=bankTotal(), debts=totalDebt();
+  const finRem=db.financings.reduce((s,f)=>s+financingRemaining(f),0);
+  const finAssets=db.financings.reduce((s,f)=>s+(f.assetValue||0),0);
+  const ativos=banks+finAssets;
+  const passivos=debts+finRem;
+  const patLiq=ativos-passivos;
+  const typeIcon={imovel:'🏠',veiculo:'🚗',outro:'📦'};
+
+  let mainContent='';
+  if(subTab.resumo==='orcamento') {
+    mainContent=`
+      <div class="card">
+        <div style="font-weight:600;color:#111827;margin-bottom:12px">Resumo do Mês</div>
+        <div class="stat-row"><span style="color:#6b7280">💰 Renda Total</span><span style="font-weight:600;color:#059669">${fmt(renda)}</span></div>
+        <div class="stat-row"><span style="color:#6b7280">📋 Contas Fixas</span><span style="font-weight:600;color:#374151">${fmt(contas)}</span></div>
+        <div class="stat-row"><span style="color:#6b7280">🚗 Gastos Carro</span><span style="font-weight:600;color:#374151">${fmt(carCosts)}</span></div>
+        <div class="stat-row"><span style="color:#6b7280">💼 Corretagem</span><span style="font-weight:600;color:#374151">${fmt(brokCosts)}</span></div>
+        <div class="stat-row"><span style="color:#6b7280">🛒 Gastos Variáveis</span><span style="font-weight:600;color:#374151">${fmt(varCosts)}</span></div>
+        <div class="stat-row"><span style="color:#6b7280">💳 Dívidas (mínimo)</span><span style="font-weight:600;color:#374151">${fmt(divMin)}</span></div>
+        <div class="stat-row" style="border-top:2px solid #f3f4f6;margin-top:8px;padding-top:14px">
+          <span style="font-weight:700;color:#111827;font-size:15px">Sobra / Déficit</span>
+          <span style="font-size:20px;font-weight:800;color:${sobra>=0?'#059669':'#dc2626'}">${sobra>=0?'+':'-'}${fmt(Math.abs(sobra))}</span>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-weight:600;color:#111827;margin-bottom:12px">Distribuição</div>
+        <div style="position:relative;height:200px"><canvas id="res-chart"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="font-weight:600;color:#111827;margin-bottom:12px">🎯 Plano de Quitação</div>
+        <div id="res-quitacao"></div>
+      </div>`;
+  } else {
+    // Balanço Patrimonial
+    const bankRows=db.bankAccounts.map(b=>`<div class="stat-row"><span style="color:#6b7280">🏦 ${b.bank}</span><span style="font-weight:600;color:${b.balance>=0?'#059669':'#dc2626'}">${fmt(b.balance)}</span></div>`).join('');
+    const finAssetRows=db.financings.map(f=>`<div class="stat-row"><span style="color:#6b7280">${typeIcon[f.type]||'📦'} ${f.name}</span><span style="font-weight:600;color:#374151">${fmt(f.assetValue||0)}</span></div>`).join('');
+    const debtRows=db.debts.map(d=>`<div class="stat-row"><span style="color:#6b7280">💳 ${d.name}</span><span style="font-weight:600;color:#dc2626">${fmt(d.remaining)}</span></div>`).join('');
+    const finPassRows=db.financings.map(f=>`<div class="stat-row"><span style="color:#6b7280">${typeIcon[f.type]||'📦'} ${f.name} (saldo)</span><span style="font-weight:600;color:#dc2626">${fmt(financingRemaining(f))}</span></div>`).join('');
+    mainContent=`
+      <div class="card" style="background:linear-gradient(135deg,${patLiq>=0?'#10b981,#059669':'#ef4444,#dc2626'});color:white;margin-bottom:12px">
+        <div style="font-size:12px;opacity:.8">Patrimônio Líquido</div>
+        <div class="big-amount">${patLiq<0?'-':''}${fmt(Math.abs(patLiq))}</div>
+        <div style="display:flex;gap:20px;margin-top:12px">
+          <div><div style="font-size:11px;opacity:.75">Ativos</div><div style="font-size:15px;font-weight:700">${fmt(ativos)}</div></div>
+          <div><div style="font-size:11px;opacity:.75">Passivos</div><div style="font-size:15px;font-weight:700">${fmt(passivos)}</div></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div class="card" style="margin-bottom:0">
+          <div style="font-weight:600;color:#059669;margin-bottom:10px;font-size:14px">ATIVOS</div>
+          ${bankRows||'<div style="font-size:13px;color:#9ca3af">Sem contas</div>'}
+          ${finAssets>0?`<div style="font-size:12px;font-weight:600;color:#6b7280;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">Bens Financiados</div>${finAssetRows}`:''}
+          <div class="stat-row" style="border-top:2px solid #d1fae5;margin-top:10px;padding-top:10px"><span style="font-weight:700;color:#059669">Total</span><span style="font-weight:800;color:#059669">${fmt(ativos)}</span></div>
+        </div>
+        <div class="card" style="margin-bottom:0">
+          <div style="font-weight:600;color:#dc2626;margin-bottom:10px;font-size:14px">PASSIVOS</div>
+          ${debtRows||'<div style="font-size:13px;color:#9ca3af">Sem dívidas</div>'}
+          ${finRem>0?`<div style="font-size:12px;font-weight:600;color:#6b7280;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">Saldo Financiamentos</div>${finPassRows}`:''}
+          <div class="stat-row" style="border-top:2px solid #fee2e2;margin-top:10px;padding-top:10px"><span style="font-weight:700;color:#dc2626">Total</span><span style="font-weight:800;color:#dc2626">${fmt(passivos)}</span></div>
+        </div>
+      </div>
+      ${db.financings.length?`<div class="card">
+        <div style="font-weight:600;color:#111827;margin-bottom:12px">📊 Financiamentos — Resumo</div>
+        ${db.financings.map(f=>{
+          const rem=financingRemaining(f);
+          const pct=Math.max(0,Math.min(100,((f.financedAmount-rem)/f.financedAmount)*100));
+          return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="font-weight:500">${typeIcon[f.type]} ${f.name}</span><span style="color:#dc2626;font-weight:600">${fmt(rem)}</span></div><div class="progress-bar"><div class="progress-fill" style="background:${f.color};width:${pct}%"></div></div><div style="font-size:11px;color:#9ca3af;margin-top:2px">${pct.toFixed(1)}% pago · Parcela ${f.currentInstallment||1}/${f.termMonths} · <span style="cursor:pointer;color:#2563eb" onclick="openAmortModal('${f.id}')">Ver tabela 📊</span></div></div>`;
+        }).join('')}
+      </div>`:''}`;
+  }
+
   if(resChart){resChart.destroy();resChart=null;}
-  const labels=[],data=[],colors=[];
-  if(contas>0){labels.push('Contas');data.push(contas);colors.push('#f59e0b');}
-  if(carCosts>0){labels.push('Carro');data.push(carCosts);colors.push('#f97316');}
-  if(brokCosts>0){labels.push('Corretagem');data.push(brokCosts);colors.push('#8b5cf6');}
-  if(divMin>0){labels.push('Dívidas');data.push(divMin);colors.push('#ef4444');}
-  if(sobra>0){labels.push('Sobra');data.push(sobra);colors.push('#10b981');}
-  if(data.length) resChart=new Chart(document.getElementById('res-chart').getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:12},padding:14}},tooltip:{callbacks:{label:ctx=>' '+fmt(ctx.parsed)}}}}});
-  const qEl=document.getElementById('res-quitacao'), totalDbt=totalDebt();
-  if(!db.debts.length){qEl.innerHTML='<p style="color:#9ca3af;font-size:14px;text-align:center">Nenhuma dívida cadastrada.</p>';return;}
-  if(sobra<0){qEl.innerHTML=`<div style="background:#fee2e2;color:#dc2626;padding:12px;border-radius:10px;font-size:14px">⚠️ Orçamento negativo. Aumente a renda ou reduza gastos.</div>`;return;}
-  const totalM=divMin+sobra, months=totalM>0?Math.ceil(totalDbt/totalM):999;
-  const dt=new Date(); dt.setMonth(dt.getMonth()+months);
-  qEl.innerHTML=`<div class="stat-row"><span style="color:#6b7280">Total dívidas</span><span style="font-weight:600;color:#dc2626">${fmt(totalDbt)}</span></div><div class="stat-row"><span style="color:#6b7280">Pag. mínimo</span><span style="font-weight:600">${fmt(divMin)}</span></div><div class="stat-row"><span style="color:#6b7280">Sobra livre</span><span style="font-weight:600;color:#059669">+${fmt(sobra)}</span></div><div style="margin-top:14px;padding:14px;background:#d1fae5;border-radius:12px"><div style="font-size:13px;color:#065f46">🎯 Estimativa de quitação</div><div style="font-size:22px;font-weight:800;color:#059669;margin-top:2px">~${months} meses</div><div style="font-size:13px;color:#065f46;margin-top:2px">${dt.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</div></div><div style="margin-top:10px;font-size:13px;color:#6b7280">💡 Estratégia <strong>Avalanche</strong>: direcione a sobra para a dívida com maior juro primeiro.</div>`;
+  document.getElementById('resumo-content').innerHTML=`
+    <div class="section-title">📊 Resumo</div>
+    <div class="month-nav"><button onclick="changeMonth(-1)">‹</button><div style="flex:1;text-align:center;font-weight:600;color:#111827">${monthLabel(ym)}</div><button onclick="changeMonth(1)">›</button></div>
+    <div class="sub-tabs">
+      <button class="sub-tab-btn ${subTab.resumo==='orcamento'?'active':''}" onclick="switchSubTab('resumo','orcamento')">Orçamento</button>
+      <button class="sub-tab-btn ${subTab.resumo==='balanco'?'active':''}" onclick="switchSubTab('resumo','balanco')">Balanço Patrimonial</button>
+    </div>
+    ${mainContent}`;
+
+  if(subTab.resumo==='orcamento') {
+    const qEl=document.getElementById('res-quitacao');
+    const totalDbt=totalDebt()+finRem;
+    if(!totalDbt){qEl.innerHTML='<p style="color:#9ca3af;font-size:14px;text-align:center">Nenhuma dívida cadastrada.</p>';}
+    else if(sobra<0){qEl.innerHTML=`<div style="background:#fee2e2;color:#dc2626;padding:12px;border-radius:10px;font-size:14px">⚠️ Orçamento negativo. Aumente a renda ou reduza gastos.</div>`;}
+    else{const months=sobra>0?Math.ceil(totalDbt/sobra):999;const dt=new Date();dt.setMonth(dt.getMonth()+months);qEl.innerHTML=`<div class="stat-row"><span style="color:#6b7280">Total passivos</span><span style="font-weight:600;color:#dc2626">${fmt(totalDbt)}</span></div><div class="stat-row"><span style="color:#6b7280">Sobra livre</span><span style="font-weight:600;color:#059669">+${fmt(sobra)}</span></div><div style="margin-top:14px;padding:14px;background:#d1fae5;border-radius:12px"><div style="font-size:13px;color:#065f46">🎯 Estimativa de quitação</div><div style="font-size:22px;font-weight:800;color:#059669;margin-top:2px">~${months} meses</div><div style="font-size:13px;color:#065f46;margin-top:2px">${dt.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</div></div><div style="margin-top:10px;font-size:13px;color:#6b7280">💡 Estratégia <strong>Avalanche</strong>: direcione a sobra para a dívida com maior juro primeiro.</div>`;}
+    setTimeout(()=>{
+      const canvas=document.getElementById('res-chart'); if(!canvas) return;
+      const labels=[],data=[],colors=[];
+      if(contas>0){labels.push('Contas');data.push(contas);colors.push('#f59e0b');}
+      if(carCosts>0){labels.push('Carro');data.push(carCosts);colors.push('#f97316');}
+      if(brokCosts>0){labels.push('Correto.');data.push(brokCosts);colors.push('#8b5cf6');}
+      if(varCosts>0){labels.push('Variáveis');data.push(varCosts);colors.push('#a21caf');}
+      if(divMin>0){labels.push('Dívidas');data.push(divMin);colors.push('#ef4444');}
+      if(sobra>0){labels.push('Sobra');data.push(sobra);colors.push('#10b981');}
+      if(data.length) resChart=new Chart(canvas.getContext('2d'),{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:12},padding:14}},tooltip:{callbacks:{label:ctx=>' '+fmt(ctx.parsed)}}}}});
+    },50);
+  }
 }
 
 // ============================================================
