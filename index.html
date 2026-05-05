@@ -466,6 +466,15 @@ const CAR_CATS      = ['Combustível','Manutenção','IPVA','Seguro','Multa','Es
 const BROK_CATS     = ['Material Gráfico','Publicidade/Ads','Plataforma','Deslocamento','Outros'];
 const VARIABLE_CATS = ['Alimentação','Lazer','Saúde','Vestuário','Beleza','Educação','Transporte','Outros'];
 const FIN_COLORS    = ['#3b82f6','#f97316','#8b5cf6','#10b981','#ec4899','#06b6d4'];
+const AUDIT_CHECKS  = [
+  'Conferir dinheiro em espécie',
+  'Verificar extratos bancários',
+  'Confirmar contas pagas / pendentes',
+  'Registrar km da semana',
+  'Revisar inadimplências / a receber',
+  'Atualizar saldos das contas bancárias',
+  'Checar dívidas e financiamentos',
+];
 
 function mkDefault() {
   return {
@@ -479,6 +488,7 @@ function mkDefault() {
     costs: [],
     kmLog: [],
     financings: [],
+    auditLog: [],
     carSetup: { kmPerLiter: 10, fuelPrice: 6.0 }
   };
 }
@@ -496,6 +506,7 @@ function loadDb() {
     if (!Array.isArray(merged.costs)) merged.costs = [];
     if (!Array.isArray(merged.kmLog)) merged.kmLog = [];
     if (!Array.isArray(merged.financings)) merged.financings = [];
+    if (!Array.isArray(merged.auditLog)) merged.auditLog = [];
     return merged;
   } catch { return mkDefault(); }
 }
@@ -508,6 +519,7 @@ let custoType      = 'car';
 let subTab         = { renda: 'lancamentos', gastos: 'contas', banco: 'contas', resumo: 'orcamento' };
 let resChart       = null;
 let amortChart     = null;
+let currentAuditWeek = '';
 let roomMode       = 'new';
 let generatedCode  = '';
 
@@ -573,6 +585,7 @@ function loadMerge(data) {
   if (!Array.isArray(merged.costs)) merged.costs = [];
   if (!Array.isArray(merged.kmLog)) merged.kmLog = [];
   if (!Array.isArray(merged.financings)) merged.financings = [];
+  if (!Array.isArray(merged.auditLog)) merged.auditLog = [];
   return merged;
 }
 
@@ -613,6 +626,55 @@ function kmInDay(d) { return db.kmLog.filter(k=>k.date===d).reduce((s,k)=>s+k.km
 function fuelCostForKm(km) { const {kmPerLiter,fuelPrice}=db.carSetup; return kmPerLiter>0?(km/kmPerLiter)*fuelPrice:0; }
 function generateCode() { const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
 function generateToken() { const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:12},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
+
+// ── Week helpers ────────────────────────────────────────────
+function getMonday(dateStr) {
+  const d=new Date((dateStr||todayStr())+'T12:00:00');
+  const day=d.getDay(); // 0=Sun
+  d.setDate(d.getDate()-(day===0?6:day-1));
+  return d.toISOString().split('T')[0];
+}
+function getWeekEnd(ws) {
+  const d=new Date(ws+'T12:00:00'); d.setDate(d.getDate()+6);
+  return d.toISOString().split('T')[0];
+}
+function weekLabel(ws) {
+  const we=getWeekEnd(ws);
+  const fd=s=>{const[,m,d]=s.split('-');return d+'/'+m;};
+  const [y]=ws.split('-');
+  return fd(ws)+' — '+fd(we)+' · '+y;
+}
+function changeAuditWeek(dir) {
+  const d=new Date(currentAuditWeek+'T12:00:00');
+  d.setDate(d.getDate()+dir*7);
+  currentAuditWeek=d.toISOString().split('T')[0];
+  renderSection('resumo');
+}
+
+// ============================================================
+// AUDIT
+// ============================================================
+function getAuditForWeek(ws) { return db.auditLog.find(a=>a.weekStart===ws); }
+
+function toggleAuditCheck(ws, idx) {
+  let a=db.auditLog.find(a=>a.weekStart===ws);
+  if(!a){a={id:uid(),weekStart:ws,cashOnHand:'',notes:'',checks:new Array(AUDIT_CHECKS.length).fill(false),savedAt:todayStr()};db.auditLog.push(a);}
+  if(!Array.isArray(a.checks)||a.checks.length!==AUDIT_CHECKS.length) a.checks=new Array(AUDIT_CHECKS.length).fill(false);
+  a.checks[idx]=!a.checks[idx];
+  saveDb(); renderSection('resumo');
+}
+
+function saveAuditData() {
+  const ws=currentAuditWeek;
+  const cash=document.getElementById('audit-cash').value.trim();
+  const notes=document.getElementById('audit-notes').value.trim();
+  let a=db.auditLog.find(a=>a.weekStart===ws);
+  if(!a){a={id:uid(),weekStart:ws,cashOnHand:cash,notes,checks:new Array(AUDIT_CHECKS.length).fill(false),savedAt:todayStr()};db.auditLog.push(a);}
+  else{a.cashOnHand=cash;a.notes=notes;a.savedAt=todayStr();}
+  saveDb(); renderSection('resumo');
+  const btn=document.getElementById('audit-save-btn');
+  if(btn){btn.textContent='✅ Salvo!';setTimeout(()=>{if(btn)btn.textContent='💾 Salvar Auditoria';},2000);}
+}
 
 // ============================================================
 // NAVIGATION
@@ -1492,15 +1554,157 @@ function renderResumo() {
       </div>`:''}`;
   }
 
+  // ── Audit tab content ────────────────────────────────────
+  let auditContent = '';
+  if(subTab.resumo==='auditoria') {
+    const ws=currentAuditWeek||getMonday(todayStr());
+    const we=getWeekEnd(ws);
+    const isCurrentWeek=ws===getMonday(todayStr());
+    const audit=getAuditForWeek(ws);
+    const checks=Array.isArray(audit?.checks)&&audit.checks.length===AUDIT_CHECKS.length?audit.checks:new Array(AUDIT_CHECKS.length).fill(false);
+    const doneCount=checks.filter(Boolean).length;
+    // Income this week
+    const wi=db.income.filter(i=>i.date>=ws&&i.date<=we);
+    const uberW=wi.filter(i=>i.type==='uber').reduce((s,i)=>s+i.amount,0);
+    const salW=wi.filter(i=>i.type==='salario').reduce((s,i)=>s+i.amount,0);
+    const comW=wi.filter(i=>i.type==='comissao').reduce((s,i)=>s+i.amount,0);
+    const rendaW=uberW+salW+comW;
+    // Costs this week
+    const wc=db.costs.filter(c=>c.date>=ws&&c.date<=we);
+    const carW=wc.filter(c=>c.type==='car').reduce((s,c)=>s+c.amount,0);
+    const brokW=wc.filter(c=>c.type==='brokerage').reduce((s,c)=>s+c.amount,0);
+    const varW=wc.filter(c=>c.type==='variable').reduce((s,c)=>s+c.amount,0);
+    const gastosW=carW+brokW+varW;
+    const saldoW=rendaW-gastosW;
+    // Km this week
+    const kmW=db.kmLog.filter(k=>k.date>=ws&&k.date<=we).reduce((s,k)=>s+k.km,0);
+    const fuelW=fuelCostForKm(kmW);
+    // Previous audit for cash reference
+    const prevAudit=[...db.auditLog].filter(a=>a.weekStart<ws).sort((a,b)=>b.weekStart.localeCompare(a.weekStart))[0];
+    // Bills status in current month
+    const billsUnpaid=db.bills.filter(b=>!isBillPaid(b.id,ym));
+    // Pending receivables
+    const pendRec=db.receivables.filter(r=>r.status==='pending');
+    auditContent=`
+      <div class="card" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;margin-bottom:12px">
+        <div style="font-size:12px;opacity:.8">Auditoria Semanal</div>
+        <div style="font-size:20px;font-weight:700;margin-top:2px">${weekLabel(ws)}</div>
+        <div style="display:flex;gap:16px;margin-top:10px">
+          <div><div style="font-size:11px;opacity:.75">Renda</div><div style="font-size:15px;font-weight:700">${fmt(rendaW)}</div></div>
+          <div><div style="font-size:11px;opacity:.75">Gastos</div><div style="font-size:15px;font-weight:700">${fmt(gastosW)}</div></div>
+          <div><div style="font-size:11px;opacity:.75">Saldo</div><div style="font-size:15px;font-weight:700;color:${saldoW>=0?'#a7f3d0':'#fca5a5'}">${saldoW>=0?'+':''}${fmt(saldoW)}</div></div>
+        </div>
+      </div>
+
+      <!-- Semana nav -->
+      <div class="month-nav" style="margin-bottom:16px">
+        <button onclick="changeAuditWeek(-1)">‹</button>
+        <div style="flex:1;text-align:center;font-size:13px;font-weight:600;color:#374151">${isCurrentWeek?'📅 Semana atual':'📅 '+weekLabel(ws)}</div>
+        <button onclick="changeAuditWeek(1)" ${isCurrentWeek?'disabled style="opacity:.3"':''}>›</button>
+      </div>
+
+      <!-- Caixa -->
+      <div class="card" style="margin-bottom:12px">
+        <div style="font-weight:600;color:#111827;margin-bottom:12px">💵 Caixa — Dinheiro em Espécie</div>
+        ${prevAudit?.cashOnHand?`<div style="font-size:12px;color:#9ca3af;margin-bottom:8px">Semana anterior: <strong style="color:#374151">R$ ${prevAudit.cashOnHand}</strong> (${weekLabel(prevAudit.weekStart).split('·')[0].trim()})</div>`:''}
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:18px;font-weight:700;color:#374151">R$</span>
+          <input type="number" inputmode="decimal" class="form-input" id="audit-cash" placeholder="0,00" step="0.01" min="0" value="${audit?.cashOnHand||''}" style="font-size:20px;font-weight:700">
+        </div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:6px">Conte o dinheiro físico agora e registre aqui.</div>
+      </div>
+
+      <!-- Resumo da semana -->
+      <div class="card" style="margin-bottom:12px">
+        <div style="font-weight:600;color:#111827;margin-bottom:12px">📊 Resumo da Semana</div>
+        <div style="margin-bottom:10px">
+          <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Renda</div>
+          ${uberW>0?`<div class="stat-row"><span style="color:#6b7280">🚗 Uber</span><span style="font-weight:600;color:#059669">${fmt(uberW)}</span></div>`:''}
+          ${salW>0?`<div class="stat-row"><span style="color:#6b7280">👩 Jaqueline</span><span style="font-weight:600;color:#be185d">${fmt(salW)}</span></div>`:''}
+          ${comW>0?`<div class="stat-row"><span style="color:#6b7280">🤝 Comissões</span><span style="font-weight:600;color:#2563eb">${fmt(comW)}</span></div>`:''}
+          ${rendaW===0?`<div style="font-size:13px;color:#9ca3af;padding:6px 0">Nenhuma renda registrada esta semana.</div>`:''}
+          <div class="stat-row" style="border-top:1px solid #f3f4f6;margin-top:4px;padding-top:10px"><span style="font-weight:600;color:#374151">Total Renda</span><span style="font-weight:700;color:#059669">${fmt(rendaW)}</span></div>
+        </div>
+        <div style="margin-bottom:10px">
+          <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Gastos</div>
+          ${carW>0?`<div class="stat-row"><span style="color:#6b7280">🚗 Carro</span><span style="font-weight:600">${fmt(carW)}</span></div>`:''}
+          ${brokW>0?`<div class="stat-row"><span style="color:#6b7280">💼 Corretagem</span><span style="font-weight:600">${fmt(brokW)}</span></div>`:''}
+          ${varW>0?`<div class="stat-row"><span style="color:#6b7280">🛒 Variáveis</span><span style="font-weight:600">${fmt(varW)}</span></div>`:''}
+          ${gastosW===0?`<div style="font-size:13px;color:#9ca3af;padding:6px 0">Nenhum gasto registrado esta semana.</div>`:''}
+          <div class="stat-row" style="border-top:1px solid #f3f4f6;margin-top:4px;padding-top:10px"><span style="font-weight:600;color:#374151">Total Gastos</span><span style="font-weight:700;color:#dc2626">${fmt(gastosW)}</span></div>
+        </div>
+        <div style="background:${saldoW>=0?'#d1fae5':'#fee2e2'};border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:700;color:${saldoW>=0?'#065f46':'#991b1b'}">⚖️ Saldo da Semana</span>
+          <span style="font-size:20px;font-weight:800;color:${saldoW>=0?'#059669':'#dc2626'}">${saldoW>=0?'+':''}${fmt(saldoW)}</span>
+        </div>
+      </div>
+
+      <!-- Km -->
+      <div class="card" style="margin-bottom:12px">
+        <div style="font-weight:600;color:#111827;margin-bottom:10px">🚗 Quilometragem da Semana</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:#e0f2fe;border-radius:10px;padding:10px"><div style="font-size:11px;color:#0369a1">Km Rodados</div><div style="font-size:20px;font-weight:700;color:#0369a1">${kmW} km</div></div>
+          <div style="background:#fff7ed;border-radius:10px;padding:10px"><div style="font-size:11px;color:#c2410c">Combustível Est.</div><div style="font-size:20px;font-weight:700;color:#ea580c">${fmt(fuelW)}</div></div>
+        </div>
+        ${kmW===0?`<div style="font-size:12px;color:#9ca3af;margin-top:8px">Nenhum km registrado. Use o botão 📏 Km no Dashboard.</div>`:`<div style="font-size:12px;color:#6b7280;margin-top:8px">Custo/km: R$ ${kmW>0?(fuelW/kmW).toFixed(3):'—'}</div>`}
+      </div>
+
+      <!-- Alertas -->
+      ${billsUnpaid.length>0||pendRec.length>0?`<div class="card" style="margin-bottom:12px;border-left:4px solid #f59e0b">
+        <div style="font-weight:600;color:#111827;margin-bottom:10px">⚠️ Atenção</div>
+        ${billsUnpaid.length>0?`<div style="font-size:13px;color:#92400e;margin-bottom:6px">📋 <strong>${billsUnpaid.length} conta${billsUnpaid.length>1?'s':''}</strong> pendente${billsUnpaid.length>1?'s':''} este mês: ${billsUnpaid.map(b=>b.name).join(', ')}</div>`:''}
+        ${pendRec.length>0?`<div style="font-size:13px;color:#92400e">📬 <strong>${pendRec.length} inadimplência${pendRec.length>1?'s':''}</strong> a receber: ${fmt(pendRec.reduce((s,r)=>s+r.amount,0))}</div>`:''}
+      </div>`:''}
+
+      <!-- Checklist -->
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="font-weight:600;color:#111827">✅ Checklist</div>
+          <span style="font-size:13px;font-weight:600;color:${doneCount===AUDIT_CHECKS.length?'#059669':'#6b7280'}">${doneCount}/${AUDIT_CHECKS.length}</span>
+        </div>
+        ${doneCount===AUDIT_CHECKS.length?`<div style="background:#d1fae5;border-radius:10px;padding:10px;text-align:center;font-size:14px;font-weight:600;color:#065f46;margin-bottom:10px">🎉 Auditoria completa!</div>`:''}
+        ${AUDIT_CHECKS.map((item,i)=>`
+          <div class="list-row" onclick="toggleAuditCheck('${ws}',${i})" style="cursor:pointer">
+            <div class="check-toggle ${checks[i]?'checked':''}" style="flex-shrink:0">${checks[i]?'✓':''}</div>
+            <div style="flex:1;font-size:14px;color:${checks[i]?'#9ca3af':'#111827'};text-decoration:${checks[i]?'line-through':'none'}">${item}</div>
+          </div>`).join('')}
+      </div>
+
+      <!-- Observações -->
+      <div class="card" style="margin-bottom:12px">
+        <div style="font-weight:600;color:#111827;margin-bottom:10px">📝 Observações da Semana</div>
+        <textarea id="audit-notes" class="form-input" placeholder="Decisões tomadas, metas ajustadas, situações especiais..." style="height:90px;resize:none;line-height:1.5">${audit?.notes||''}</textarea>
+      </div>
+
+      <!-- Salvar -->
+      <button id="audit-save-btn" class="btn-primary" onclick="saveAuditData()" style="margin-bottom:8px">💾 Salvar Auditoria</button>
+
+      <!-- Histórico -->
+      ${db.auditLog.length>1?`<div class="card" style="margin-top:4px">
+        <div style="font-weight:600;color:#111827;margin-bottom:10px">🗓️ Histórico de Auditorias</div>
+        ${[...db.auditLog].sort((a,b)=>b.weekStart.localeCompare(a.weekStart)).slice(0,8).map(a=>{
+          const done=(Array.isArray(a.checks)?a.checks.filter(Boolean).length:0);
+          return `<div class="list-row" onclick="currentAuditWeek='${a.weekStart}';renderSection('resumo')" style="cursor:pointer">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:500;color:#374151">${weekLabel(a.weekStart)}</div>
+              <div style="font-size:12px;color:#9ca3af">${done}/${AUDIT_CHECKS.length} itens · ${a.cashOnHand?'💵 R$ '+a.cashOnHand:''}</div>
+            </div>
+            <div style="font-size:12px;color:${done===AUDIT_CHECKS.length?'#059669':'#9ca3af'}">${done===AUDIT_CHECKS.length?'✅':'⬜'}</div>
+          </div>`;
+        }).join('')}
+      </div>`:''}`;
+  }
+
   if(resChart){resChart.destroy();resChart=null;}
   document.getElementById('resumo-content').innerHTML=`
     <div class="section-title">📊 Resumo</div>
-    <div class="month-nav"><button onclick="changeMonth(-1)">‹</button><div style="flex:1;text-align:center;font-weight:600;color:#111827">${monthLabel(ym)}</div><button onclick="changeMonth(1)">›</button></div>
+    ${subTab.resumo!=='auditoria'?`<div class="month-nav"><button onclick="changeMonth(-1)">‹</button><div style="flex:1;text-align:center;font-weight:600;color:#111827">${monthLabel(ym)}</div><button onclick="changeMonth(1)">›</button></div>`:''}
     <div class="sub-tabs">
       <button class="sub-tab-btn ${subTab.resumo==='orcamento'?'active':''}" onclick="switchSubTab('resumo','orcamento')">Orçamento</button>
-      <button class="sub-tab-btn ${subTab.resumo==='balanco'?'active':''}" onclick="switchSubTab('resumo','balanco')">Balanço Patrimonial</button>
+      <button class="sub-tab-btn ${subTab.resumo==='balanco'?'active':''}" onclick="switchSubTab('resumo','balanco')">Balanço</button>
+      <button class="sub-tab-btn ${subTab.resumo==='auditoria'?'active':''}" onclick="switchSubTab('resumo','auditoria')">🔍 Auditoria</button>
     </div>
-    ${mainContent}`;
+    ${subTab.resumo==='auditoria'?auditContent:mainContent}`;
 
   if(subTab.resumo==='orcamento') {
     const qEl=document.getElementById('res-quitacao');
@@ -1536,6 +1740,7 @@ document.getElementById('btn-open-metas').addEventListener('click', openGoalsMod
 
 async function init() {
   currentMonth=todayStr().substring(0,7);
+  currentAuditWeek=getMonday(todayStr());
   updateHeader();
   const hasSupa=initSupabase();
   if(hasSupa&&roomCode) {
