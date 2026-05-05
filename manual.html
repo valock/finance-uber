@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual de Uso — FinanceUber</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1e293b;
+      background: #f8fafc;
+    }
+
+    @media print {
+      body { background: white; font-size: 11.5px; }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+      section { page-break-inside: avoid; }
+      h2 { page-break-after: avoid; }
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* COVER */
+    .cover {
+      text-align: center;
+      padding: 48px 0 40px;
+      border-bottom: 3px solid #0ea5e9;
+      margin-bottom: 40px;
+    }
+    .cover .logo { font-size: 48px; margin-bottom: 8px; }
+    .cover h1 {
+      font-size: 32px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -1px;
+    }
+    .cover .subtitle {
+      font-size: 15px;
+      color: #64748b;
+      margin-top: 6px;
+    }
+    .cover .version {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 4px 14px;
+      background: #0ea5e9;
+      color: white;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* TOC */
+    .toc {
+      background: #f1f5f9;
+      border-left: 4px solid #0ea5e9;
+      border-radius: 0 8px 8px 0;
+      padding: 20px 24px;
+      margin-bottom: 40px;
+    }
+    .toc h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 12px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 4px 0; }
+    .toc a { color: #0284c7; text-decoration: none; font-weight: 500; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* SECTIONS */
+    section {
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h2 .num {
+      background: #0ea5e9;
+      color: white;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e3a5f;
+      margin: 20px 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    h3::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: #0ea5e9;
+      border-radius: 2px;
+    }
+
+    p { margin-bottom: 10px; color: #334155; }
+
+    ul, ol { padding-left: 20px; margin-bottom: 10px; }
+    li { margin: 4px 0; color: #334155; }
+
+    .tip {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-left: 4px solid #0284c7;
+      border-radius: 0 6px 6px 0;
+      padding: 12px 16px;
+      margin: 12px 0;
+    }
+    .tip strong { color: #0284c7; }
+
+    .warn {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-left: 4px solid #f97316;
+      border-radius: 0 6px 6px 0;
+      padding: 12px 16px;
+      margin: 12px 0;
+    }
+    .warn strong { color: #c2410c; }
+
+    .success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid #16a34a;
+      border-radius: 0 6px 6px 0;
+      padding: 12px 16px;
+      margin: 12px 0;
+    }
+    .success strong { color: #15803d; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      margin: 12px 0;
+    }
+    th {
+      background: #1e3a5f;
+      color: white;
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+    }
+    td {
+      padding: 7px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #f8fafc; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-blue { background: #dbeafe; color: #1d4ed8; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-orange { background: #fff7ed; color: #c2410c; }
+    .badge-purple { background: #f3e8ff; color: #7e22ce; }
+
+    .step {
+      display: flex;
+      gap: 12px;
+      margin: 10px 0;
+      align-items: flex-start;
+    }
+    .step-num {
+      background: #0f172a;
+      color: white;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-body { flex: 1; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 12px 0;
+    }
+    .card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .card-title {
+      font-weight: 700;
+      font-size: 13px;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+
+    .footer {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 11px;
+      padding: 24px 0;
+      border-top: 1px solid #e2e8f0;
+      margin-top: 40px;
+    }
+
+    .print-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0ea5e9;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(14,165,233,0.4);
+      transition: background 0.2s;
+    }
+    .print-btn:hover { background: #0284c7; }
+
+    code {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #c2410c;
+    }
+
+    .formula {
+      background: #fafafa;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #1e293b;
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- COVER -->
+  <div class="cover">
+    <div class="logo">💰</div>
+    <h1>FinanceUber</h1>
+    <div class="subtitle">Manual de Uso Completo — Controle Financeiro Pessoal</div>
+    <div class="version">Versão 2025 · Maio 2026</div>
+  </div>
+
+  <!-- TABLE OF CONTENTS -->
+  <div class="toc">
+    <h2>Índice</h2>
+    <ol>
+      <li><a href="#sec1">Visão Geral e Primeiros Passos</a></li>
+      <li><a href="#sec2">Sincronização com Jaqueline (Sala Compartilhada)</a></li>
+      <li><a href="#sec3">Dashboard — Painel Principal</a></li>
+      <li><a href="#sec4">Renda — Lançamentos e Metas</a></li>
+      <li><a href="#sec5">Gastos — Contas, Dívidas, Custos Operacionais e Variáveis</a></li>
+      <li><a href="#sec6">Banco — Contas, Financiamentos e Recebíveis</a></li>
+      <li><a href="#sec7">Resumo — Orçamento, Inadimplências, Patrimônio e Balanço</a></li>
+      <li><a href="#sec8">Auditoria Semanal com Jaqueline</a></li>
+      <li><a href="#sec9">Importar Extrato CSV</a></li>
+      <li><a href="#sec10">Instalação no iPhone (PWA)</a></li>
+      <li><a href="#sec11">Backup, Restauração e Configurações</a></li>
+      <li><a href="#sec12">Rotina Diária e Semanal Recomendada</a></li>
+      <li><a href="#sec13">Boas Práticas e Dicas Avançadas</a></li>
+    </ol>
+  </div>
+
+  <!-- SECTION 1 -->
+  <section id="sec1">
+    <h2><span class="num">1</span>Visão Geral e Primeiros Passos</h2>
+
+    <p>O <strong>FinanceUber</strong> é um aplicativo de controle financeiro pessoal desenvolvido especialmente para você — motorista de aplicativo que também atua com corretagem. Ele roda diretamente no navegador (sem instalação) e sincroniza em tempo real com o celular da Jaqueline.</p>
+
+    <h3>O que você pode controlar</h3>
+    <ul>
+      <li>Renda do Uber, comissões e salários</li>
+      <li>Contas fixas mensais e dívidas</li>
+      <li>Custos do carro, da corretora e gastos variáveis do dia a dia</li>
+      <li>Contas bancárias e saldo atualizado</li>
+      <li>Financiamentos (PRICE e SAC) com tabela de amortização</li>
+      <li>Recebíveis (clientes que devem para você)</li>
+      <li>Bens imobilizados (apartamento, carro, investimentos)</li>
+      <li>Balanço patrimonial completo (Ativos − Passivos = Patrimônio)</li>
+      <li>Auditoria semanal conjunta com Jaqueline</li>
+      <li>Importação de extrato bancário via CSV</li>
+    </ul>
+
+    <h3>Primeiro acesso</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body">Acesse <strong>fin.marcotulio.pro</strong> no celular ou computador.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Clique no ícone de engrenagem ⚙️ (canto superior direito) → configure seu nome e o nome da Jaqueline.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Defina suas metas de renda: diária, semanal e mensal.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Crie a sala compartilhada (veja Seção 2) para sincronizar com a Jaqueline.</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body">Comece a lançar sua renda do dia na aba <strong>Renda</strong>.</div></div>
+
+    <div class="tip"><strong>💡 Dica:</strong> Os dados são salvos no próprio celular (localStorage) e também sincronizados na nuvem via Supabase. Nunca feche o app sem sincronizar.</div>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section id="sec2">
+    <h2><span class="num">2</span>Sincronização com Jaqueline (Sala Compartilhada)</h2>
+
+    <p>A sala compartilhada permite que você e a Jaqueline vejam e editem os dados em tempo real, de dispositivos diferentes.</p>
+
+    <h3>Criar uma sala (você, uma única vez)</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body">Clique em ⚙️ → <strong>Criar Sala</strong></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">O app gera um código como: <code>ABC123-XXXXXXXXXXXX</code></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Envie esse código completo para a Jaqueline pelo WhatsApp</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Guarde o código — ele é a chave de acesso permanente</div></div>
+
+    <h3>Entrar em uma sala existente (Jaqueline ou você em dispositivo novo)</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body">Clique em ⚙️ → <strong>Entrar em Sala</strong></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Cole o código completo <code>ABC123-XXXXXXXXXXXX</code></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Clique em Entrar — os dados são carregados automaticamente</div></div>
+
+    <div class="warn"><strong>⚠️ Atenção:</strong> Qualquer alteração feita por um dos dois aparece instantaneamente no celular do outro. Se ambos editarem ao mesmo tempo, quem salvar por último prevalece. Combinem um de cada vez.</div>
+
+    <div class="success"><strong>🔒 Segurança:</strong> O token de acesso é criptografado (SHA-256) no servidor. Ninguém que não tenha o código completo consegue acessar ou alterar seus dados.</div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section id="sec3">
+    <h2><span class="num">3</span>Dashboard — Painel Principal</h2>
+
+    <p>O Dashboard é a tela inicial. Mostra um resumo de tudo do mês atual.</p>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">💰 Renda do Mês</div>
+        Total lançado no mês atual: Uber + comissões + salário. Compara com a meta mensal.
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Progresso da Meta</div>
+        Barra de progresso visual. Verde = acima de 80%, Amarelo = 50–80%, Vermelho = abaixo de 50%.
+      </div>
+      <div class="card">
+        <div class="card-title">🏦 Saldo em Banco</div>
+        Soma de todas as contas bancárias cadastradas.
+      </div>
+      <div class="card">
+        <div class="card-title">🏛️ Patrimônio Líquido</div>
+        Fórmula: Bancos + Bens Próprios + Valor dos Bens Financiados − Dívidas − Saldo Devedor dos Financiamentos.
+      </div>
+    </div>
+
+    <p>Os cartões de resumo na parte inferior mostram: Contas do Mês, Dívidas Totais, Km Rodados e Custos Operacionais.</p>
+
+    <div class="tip"><strong>💡 Dica matinal:</strong> Abra o Dashboard toda manhã para checar o progresso em relação à meta diária. Se você precisa de R$ 200/dia e está em dia, o card de Renda mostrará em verde.</div>
+  </section>
+
+  <!-- SECTION 4 -->
+  <section id="sec4">
+    <h2><span class="num">4</span>Renda — Lançamentos e Metas</h2>
+
+    <h3>Sub-abas</h3>
+    <table>
+      <tr><th>Sub-aba</th><th>O que faz</th></tr>
+      <tr><td><span class="badge badge-blue">Lançamentos</span></td><td>Lista e adiciona entradas de renda</td></tr>
+      <tr><td><span class="badge badge-green">Metas</span></td><td>Define metas diária, semanal e mensal</td></tr>
+    </table>
+
+    <h3>Tipos de renda</h3>
+    <ul>
+      <li><strong>Uber</strong> — corridas do dia</li>
+      <li><strong>Comissão</strong> — comissões da corretora</li>
+      <li><strong>Salário</strong> — salário fixo ou outras entradas</li>
+    </ul>
+
+    <h3>Como lançar renda do Uber</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body">Clique em <strong>Renda</strong> na barra de abas inferior</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Selecione o tipo: <strong>Uber</strong></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Informe o valor (ex: 187,50), a data e uma observação opcional</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Clique em <strong>Adicionar</strong> — o lançamento aparece na lista</div></div>
+
+    <div class="tip"><strong>💡 Boa prática:</strong> Lance a renda do dia <strong>toda noite</strong> antes de dormir, junto com o km final. Isso garante que o Dashboard mostre o progresso correto no dia seguinte.</div>
+
+    <h3>Metas</h3>
+    <p>Acesse a sub-aba <strong>Metas</strong> para definir quanto você quer ganhar por dia, semana e mês. Essas metas alimentam as barras de progresso do Dashboard e da aba Resumo.</p>
+  </section>
+
+  <!-- SECTION 5 -->
+  <section id="sec5">
+    <h2><span class="num">5</span>Gastos — Contas, Dívidas, Custos e Variáveis</h2>
+
+    <h3>Sub-abas</h3>
+    <table>
+      <tr><th>Sub-aba</th><th>O que controla</th></tr>
+      <tr><td><span class="badge badge-blue">Contas</span></td><td>Contas fixas mensais (aluguel, luz, internet, etc.)</td></tr>
+      <tr><td><span class="badge badge-orange">Dívidas</span></td><td>Dívidas ativas com saldo devedor, juros e pagamento mínimo</td></tr>
+      <tr><td><span class="badge badge-purple">Custos Op.</span></td><td>Custos do carro e da corretora (variáveis por data)</td></tr>
+      <tr><td><span class="badge badge-green">Variáveis</span></td><td>Gastos do dia a dia: alimentação, lazer, saúde, vestuário, etc.</td></tr>
+    </table>
+
+    <h3>Contas Fixas</h3>
+    <p>Cada conta tem: nome, valor, dia de vencimento e categoria. Use o botão <strong>✓ Pago</strong> no mês atual para registrar o pagamento. As contas aparecem no Resumo do orçamento mensal.</p>
+
+    <h3>Dívidas</h3>
+    <p>Cadastre cada dívida com: credor, saldo restante, pagamento mínimo e taxa de juros. As dívidas aparecem no balanço patrimonial como <em>passivo</em> e na tela de inadimplências.</p>
+
+    <div class="warn"><strong>⚠️ Importante:</strong> Quando quitar uma dívida, <strong>exclua-a</strong> do cadastro para que o balanço patrimonial reflita a realidade.</div>
+
+    <h3>Custos Operacionais (Carro e Corretora)</h3>
+    <p>Na sub-aba <strong>Custos Op.</strong>, alterne entre as abas internas:</p>
+    <ul>
+      <li><strong>Carro:</strong> Combustível, Manutenção, IPVA, Seguro, Multa, Estacionamento</li>
+      <li><strong>Corretora:</strong> Material Gráfico, Publicidade/Ads, Plataforma, Deslocamento</li>
+    </ul>
+    <p>Configure o consumo do carro (km/L e preço do combustível) em ⚙️ Configurações → "Setup do Carro".</p>
+
+    <h3>Gastos Variáveis</h3>
+    <p>Registre compras do dia a dia por categoria: Alimentação, Lazer, Saúde, Vestuário, Beleza, Educação, Transporte, Outros. O total aparece no Resumo mensal.</p>
+
+    <div class="tip"><strong>💡 Dica:</strong> Use a importação CSV (Seção 9) para lançar automaticamente os gastos do cartão de crédito ou conta corrente, sem precisar lançar um a um.</div>
+  </section>
+
+  <!-- SECTION 6 -->
+  <section id="sec6">
+    <h2><span class="num">6</span>Banco — Contas, Financiamentos e Recebíveis</h2>
+
+    <h3>Sub-abas</h3>
+    <table>
+      <tr><th>Sub-aba</th><th>O que controla</th></tr>
+      <tr><td><span class="badge badge-green">Contas</span></td><td>Contas bancárias com saldo atual</td></tr>
+      <tr><td><span class="badge badge-blue">Financiamentos</span></td><td>Financiamentos PRICE ou SAC com amortização</td></tr>
+      <tr><td><span class="badge badge-orange">Recebíveis</span></td><td>Valores a receber de clientes (corretagem)</td></tr>
+    </table>
+
+    <h3>Contas Bancárias</h3>
+    <p>Cadastre cada banco (Nubank, Inter, Itaú, etc.) com o tipo (corrente/poupança/digital) e o saldo atual. <strong>Atualize o saldo manualmente após conferir no app do banco</strong> — o FinanceUber não acessa sua conta diretamente.</p>
+
+    <h3>Financiamentos</h3>
+    <p>Cadastre o financiamento do apartamento ou do carro:</p>
+    <ul>
+      <li><strong>Nome:</strong> ex. "Apartamento Bairro X"</li>
+      <li><strong>Tipo:</strong> Imóvel, Veículo ou Outro</li>
+      <li><strong>Valor do bem:</strong> Valor de mercado atual do bem</li>
+      <li><strong>Valor financiado:</strong> Total que você pegou emprestado</li>
+      <li><strong>Taxa mensal:</strong> Juros mensais (ex: 0,82% para Caixa)</li>
+      <li><strong>Prazo:</strong> Total de parcelas (ex: 240 para 20 anos)</li>
+      <li><strong>Parcela atual:</strong> Número da próxima parcela a pagar</li>
+      <li><strong>Sistema:</strong> PRICE (parcela fixa) ou SAC (parcela decrescente)</li>
+    </ul>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">📊 PRICE</div>
+        Parcelas iguais durante todo o contrato. Juros maiores no início.
+        <div class="formula">PMT = PV × r×(1+r)^n / ((1+r)^n − 1)</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📉 SAC</div>
+        Amortização constante, parcelas decrescentes. Você paga mais no início mas quita mais rápido.
+        <div class="formula">Amort = PV/n<br>Parcela = Amort + Saldo × r</div>
+      </div>
+    </div>
+
+    <p>O app gera uma tabela completa de amortização e um gráfico mostrando a evolução do saldo devedor, principal e juros pagos ao longo do tempo.</p>
+
+    <h3>Recebíveis (Corretagem)</h3>
+    <p>Cadastre clientes que devem comissões. Status: <strong>Pendente</strong>, <strong>Recebido</strong> ou <strong>Perdido</strong>. Os recebíveis pendentes aparecem no balanço como ativo circulante.</p>
+  </section>
+
+  <!-- SECTION 7 -->
+  <section id="sec7">
+    <h2><span class="num">7</span>Resumo — Orçamento, Inadimplências, Patrimônio e Balanço</h2>
+
+    <h3>Sub-abas</h3>
+    <table>
+      <tr><th>Sub-aba</th><th>O que mostra</th></tr>
+      <tr><td><span class="badge badge-blue">Orçamento</span></td><td>Receitas x despesas do mês com gráfico de rosca</td></tr>
+      <tr><td><span class="badge badge-orange">Inadimplências</span></td><td>Contas não pagas e dívidas em atraso</td></tr>
+      <tr><td><span class="badge badge-purple">Patrimônio</span></td><td>Gráfico de evolução e projeção de patrimônio</td></tr>
+      <tr><td><span class="badge badge-green">Balanço</span></td><td>Ativos x Passivos = Patrimônio Líquido</td></tr>
+    </table>
+
+    <h3>Inadimplências</h3>
+    <p>Mostra contas do mês que ainda não foram marcadas como pagas e dívidas cujo pagamento mínimo está atrasado. Use essa aba para priorizar o que pagar primeiro.</p>
+
+    <h3>Balanço Patrimonial</h3>
+    <p>O balanço divide seus bens e obrigações em duas colunas:</p>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">📈 ATIVOS (o que você tem)</div>
+        <ul style="margin:0;padding-left:16px">
+          <li>Saldo em bancos</li>
+          <li>Valor dos bens financiados</li>
+          <li>Bens próprios (apartamento quitado, carro, investimentos)</li>
+          <li>Recebíveis pendentes</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">📉 PASSIVOS (o que você deve)</div>
+        <ul style="margin:0;padding-left:16px">
+          <li>Dívidas cadastradas</li>
+          <li>Saldo devedor dos financiamentos</li>
+          <li>Contas a pagar do mês</li>
+        </ul>
+      </div>
+    </div>
+
+    <p><strong>Patrimônio Líquido = Ativos − Passivos.</strong> Se positivo: você tem mais bens do que dívidas. Se negativo: suas dívidas superam seus bens — hora de agir.</p>
+
+    <h3>Bens Próprios (Imobilizados)</h3>
+    <p>Na seção de Balanço, clique em <strong>+ Adicionar</strong> para cadastrar bens que já são seus:</p>
+    <ul>
+      <li>Apartamento ou casa quitada</li>
+      <li>Carro quitado</li>
+      <li>Investimentos (CDB, poupança, ações)</li>
+      <li>Outros bens</li>
+    </ul>
+    <div class="tip"><strong>💡 Dica:</strong> Mantenha o <em>valor de mercado</em> atualizado (não o valor que você pagou). Para o carro, pesquise na tabela FIPE a cada 6 meses.</div>
+  </section>
+
+  <!-- SECTION 8 -->
+  <section id="sec8" class="page-break">
+    <h2><span class="num">8</span>Auditoria Semanal com Jaqueline</h2>
+
+    <p>A tela de Auditoria foi criada para vocês dois sentarem juntos uma vez por semana — sugestão: <strong>toda segunda-feira de manhã</strong> — e revisarem a saúde financeira da semana anterior.</p>
+
+    <h3>Como acessar</h3>
+    <p>Clique em <strong>Auditoria</strong> na barra de abas inferior (ícone 🔍).</p>
+
+    <h3>O que fazer na auditoria</h3>
+
+    <table>
+      <tr><th>Item</th><th>O que checar</th></tr>
+      <tr><td>💵 Dinheiro em Espécie</td><td>Conte fisicamente o dinheiro na carteira/cofre e registre o valor</td></tr>
+      <tr><td>🏦 Saldo Bancário</td><td>Confirme o saldo no app de cada banco e atualize no FinanceUber</td></tr>
+      <tr><td>🚗 Km Rodado</td><td>Anote o km do odômetro e compare com o lançado no app</td></tr>
+      <tr><td>⛽ Combustível</td><td>Verifique se todos os abastecimentos foram lançados</td></tr>
+      <tr><td>📱 Renda Uber</td><td>Confirme se a renda de cada dia da semana está lançada</td></tr>
+      <tr><td>🧾 Contas Pagas</td><td>Marque como pagas as contas que foram quitadas na semana</td></tr>
+      <tr><td>📝 Observações</td><td>Registre qualquer evento financeiro relevante da semana</td></tr>
+    </table>
+
+    <h3>Checklist de auditoria</h3>
+    <p>O app mostra um checklist com 7 itens. Marque cada um conforme for verificando. O progresso (ex: 5/7) é salvo automaticamente.</p>
+
+    <h3>Navegar entre semanas</h3>
+    <p>Use as setas ← → para navegar entre semanas anteriores e comparar evolução.</p>
+
+    <div class="tip"><strong>💡 Dica:</strong> Guardem os registros das auditorias como prova financeira. Se surgir uma dúvida "quando foi que compramos aquilo?", a auditoria da semana terá a resposta.</div>
+
+    <div class="warn"><strong>⚠️ Regra de ouro:</strong> Nunca feche a semana sem fazer a auditoria. 10 minutos toda segunda-feira evitam meses de confusão.</div>
+  </section>
+
+  <!-- SECTION 9 -->
+  <section id="sec9">
+    <h2><span class="num">9</span>Importar Extrato CSV</h2>
+
+    <p>A importação de CSV permite lançar dezenas de transações de uma vez, direto do extrato bancário, sem digitar manualmente.</p>
+
+    <h3>Bancos suportados</h3>
+    <table>
+      <tr><th>Banco</th><th>Formato</th><th>Como exportar</th></tr>
+      <tr><td>Nubank</td><td>CSV com ponto e vírgula</td><td>App → Extrato → Exportar CSV</td></tr>
+      <tr><td>Inter</td><td>CSV com ponto e vírgula</td><td>App → Extrato → Baixar CSV</td></tr>
+      <tr><td>Itaú</td><td>CSV com vírgula</td><td>Internet Banking → Extrato → Excel/CSV</td></tr>
+      <tr><td>Genérico</td><td>Detecção automática</td><td>Qualquer CSV com data, descrição e valor</td></tr>
+    </table>
+
+    <h3>Passo a passo</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body">No app do banco, exporte o extrato do período desejado como CSV</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">No FinanceUber, clique em ⚙️ → <strong>📊 Importar Extrato CSV</strong></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Selecione seu banco ou deixe em "Auto" para detecção automática</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Arraste o arquivo CSV ou clique para selecionar</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body">Revise a tabela de preview — o app sugere uma categoria para cada transação</div></div>
+    <div class="step"><div class="step-num">6</div><div class="step-body">Ajuste as categorias que estiverem erradas usando o menu dropdown de cada linha</div></div>
+    <div class="step"><div class="step-num">7</div><div class="step-body">Desmarque linhas que não quiser importar (ex: transferências internas)</div></div>
+    <div class="step"><div class="step-num">8</div><div class="step-body">Clique em <strong>Importar Selecionadas</strong></div></div>
+
+    <h3>Categorias automáticas detectadas</h3>
+    <table>
+      <tr><th>Palavra-chave no extrato</th><th>Categoria sugerida</th></tr>
+      <tr><td>uber, 99, ifood, rappi, alimentos, supermercado, padaria</td><td>Alimentação (Variável)</td></tr>
+      <tr><td>posto, combustível, shell, petrobras, ipiranga</td><td>Combustível (Carro)</td></tr>
+      <tr><td>farmácia, drogaria, hospital, clínica, médico</td><td>Saúde (Variável)</td></tr>
+      <tr><td>netflix, spotify, cinema, show, lazer</td><td>Lazer (Variável)</td></tr>
+      <tr><td>salário, holerite</td><td>Renda — Salário</td></tr>
+      <tr><td>comissão, corretagem</td><td>Renda — Comissão</td></tr>
+    </table>
+
+    <div class="tip"><strong>💡 Dica:</strong> Revise sempre o preview antes de importar. O app faz uma sugestão inteligente mas pode errar em descritores genéricos do banco.</div>
+  </section>
+
+  <!-- SECTION 10 -->
+  <section id="sec10">
+    <h2><span class="num">10</span>Instalação no iPhone (PWA)</h2>
+
+    <p>Você pode instalar o FinanceUber como um app nativo no iPhone, sem precisar da App Store.</p>
+
+    <h3>Como instalar</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body">Abra <strong>fin.marcotulio.pro</strong> no Safari (obrigatório — não funciona no Chrome do iPhone)</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Toque no botão de compartilhar 📤 (parte inferior da tela)</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Role para baixo e toque em <strong>"Adicionar à Tela de Início"</strong></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Confirme o nome "FinanceUber" e toque em <strong>Adicionar</strong></div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body">O ícone aparecerá na tela inicial. Abra por ele para usar em modo app (sem a barra do Safari)</div></div>
+
+    <div class="tip"><strong>💡 Experiência idêntica para Jaqueline:</strong> Ela pode fazer o mesmo no iPhone dela para ter o FinanceUber como app e receber atualizações em tempo real.</div>
+
+    <div class="warn"><strong>📱 Android:</strong> No Chrome Android, toque nos 3 pontos (⋮) → "Adicionar à tela inicial". Funciona de forma semelhante.</div>
+  </section>
+
+  <!-- SECTION 11 -->
+  <section id="sec11">
+    <h2><span class="num">11</span>Backup, Restauração e Configurações</h2>
+
+    <h3>Backup manual</h3>
+    <p>Sempre que quiser guardar seus dados:</p>
+    <div class="step"><div class="step-num">1</div><div class="step-body">Clique em ⚙️ → <strong>📥 Exportar JSON</strong></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Um arquivo <code>financeuber-backup.json</code> será baixado</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Guarde em um local seguro (Google Drive, iCloud, etc.)</div></div>
+
+    <h3>Restaurar backup</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body">Clique em ⚙️ → <strong>📤 Importar JSON</strong></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Selecione o arquivo de backup</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Os dados são restaurados imediatamente</div></div>
+
+    <div class="warn"><strong>⚠️ Atenção:</strong> Restaurar um backup substitui todos os dados atuais. Exporte o estado atual antes de restaurar um backup antigo.</div>
+
+    <h3>Configurações disponíveis em ⚙️</h3>
+    <table>
+      <tr><th>Configuração</th><th>O que faz</th></tr>
+      <tr><td>Nome / Cônjuge</td><td>Define o nome exibido no app</td></tr>
+      <tr><td>Metas de Renda</td><td>Diária, semanal e mensal</td></tr>
+      <tr><td>Setup do Carro</td><td>Km por litro e preço do combustível (para cálculo de custo por km)</td></tr>
+      <tr><td>Sala Compartilhada</td><td>Criar ou entrar em sala com a Jaqueline</td></tr>
+      <tr><td>Importar CSV</td><td>Abre o importador de extrato bancário</td></tr>
+      <tr><td>Exportar/Importar JSON</td><td>Backup e restauração de dados</td></tr>
+    </table>
+  </section>
+
+  <!-- SECTION 12 -->
+  <section id="sec12" class="page-break">
+    <h2><span class="num">12</span>Rotina Diária e Semanal Recomendada</h2>
+
+    <h3>☀️ Todo dia de manhã (5 minutos)</h3>
+    <ul>
+      <li>Abra o Dashboard e verifique o progresso em relação à meta diária</li>
+      <li>Veja se há contas vencendo hoje na aba Gastos → Contas</li>
+      <li>Verifique se algum recebível entrou em Banco → Recebíveis</li>
+    </ul>
+
+    <h3>🌙 Toda noite após o Uber (10 minutos)</h3>
+    <ul>
+      <li>Lance a renda do dia: Renda → tipo Uber → valor do dia</li>
+      <li>Registre o km final do odômetro (ou km rodado no Uber)</li>
+      <li>Lance qualquer gasto do dia (combustível, alimentação, etc.)</li>
+      <li>Se tiver importado CSV, revise e importe as transações</li>
+    </ul>
+
+    <h3>📅 Toda segunda-feira (Auditoria com Jaqueline — 15–20 minutos)</h3>
+    <ul>
+      <li>Abra a aba Auditoria juntos</li>
+      <li>Contem o dinheiro em espécie e registrem</li>
+      <li>Confiram o saldo de cada banco e atualizem no app</li>
+      <li>Verifiquem se a renda de cada dia da semana foi lançada</li>
+      <li>Marquem as contas pagas durante a semana</li>
+      <li>Completem o checklist e registrem observações</li>
+    </ul>
+
+    <h3>📆 Uma vez por mês (Fechamento mensal — 20 minutos)</h3>
+    <ul>
+      <li>Confira o Resumo → Orçamento para ver receitas x despesas</li>
+      <li>Verifique o Balanço Patrimonial e compare com o mês anterior</li>
+      <li>Atualize o valor de mercado dos bens (carro, imóvel)</li>
+      <li>Exporte um backup JSON e salve no Google Drive</li>
+      <li>Planeje o mês seguinte: metas, contas previstas, investimentos</li>
+    </ul>
+  </section>
+
+  <!-- SECTION 13 -->
+  <section id="sec13">
+    <h2><span class="num">13</span>Boas Práticas e Dicas Avançadas</h2>
+
+    <h3>Sobre os lançamentos</h3>
+    <ul>
+      <li>Prefira lançar no mesmo dia — memória falha, app não</li>
+      <li>Use o campo "Observação" para detalhar gastos incomuns</li>
+      <li>Não deixe acumular mais de 3 dias sem lançar — fica difícil recuperar</li>
+    </ul>
+
+    <h3>Sobre as metas</h3>
+    <ul>
+      <li>Seja realista: se a meta é inatingível, você perde o hábito de olhar</li>
+      <li>Revise as metas a cada 3 meses conforme sua situação mudar</li>
+      <li>A meta diária é mais motivadora que a mensal — foque no dia a dia</li>
+    </ul>
+
+    <h3>Sobre os financiamentos</h3>
+    <ul>
+      <li>Sempre confira se a taxa e o prazo estão corretos — um erro aqui distorce todo o balanço</li>
+      <li>Atualize a "parcela atual" todo mês após pagar</li>
+      <li>Compare PRICE vs SAC na simulação antes de fechar um financiamento</li>
+    </ul>
+
+    <h3>Sobre o patrimônio</h3>
+    <ul>
+      <li>Atualize o valor dos bens a preço de mercado (tabela FIPE para carro, avaliação para imóvel)</li>
+      <li>Patrimônio Líquido negativo não é necessariamente ruim — pode ser fase de crescimento com bens de alto valor</li>
+      <li>Registre os bens quitados em <em>Balanço → Bens Próprios</em> — eles viram patrimônio puro</li>
+    </ul>
+
+    <h3>Sobre a sincronização</h3>
+    <ul>
+      <li>Sempre que fizer um lançamento importante, aguarde 2–3 segundos para garantir o envio ao servidor</li>
+      <li>Em caso de conflito (dois editando ao mesmo tempo), quem clicar "Salvar" por último ganha</li>
+      <li>Se os dados parecerem desatualizados, force a recarga da página (puxe para baixo no iPhone)</li>
+    </ul>
+
+    <h3>Sobre segurança</h3>
+    <ul>
+      <li>Nunca compartilhe o código de sala completo (<code>ABC123-XXXXXX</code>) em grupos ou redes sociais</li>
+      <li>Compartilhe apenas por mensagem privada para a Jaqueline</li>
+      <li>Se achar que o código foi comprometido, entre em ⚙️ e crie uma nova sala</li>
+    </ul>
+
+    <div class="success">
+      <strong>✅ Checklist final do onboarding:</strong>
+      <ul style="margin-top:8px">
+        <li>☐ Nome e cônjuge configurados</li>
+        <li>☐ Metas de renda definidas</li>
+        <li>☐ Sala compartilhada criada e enviada para Jaqueline</li>
+        <li>☐ App instalado no iPhone (Safari → Adicionar à Tela de Início)</li>
+        <li>☐ Contas fixas cadastradas</li>
+        <li>☐ Dívidas ativas cadastradas</li>
+        <li>☐ Contas bancárias cadastradas com saldo atual</li>
+        <li>☐ Financiamentos cadastrados (se houver)</li>
+        <li>☐ Bens próprios adicionados no Balanço</li>
+        <li>☐ Primeiro backup JSON exportado</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="footer">
+    FinanceUber — Manual de Uso · Versão Maio 2026 · fin.marcotulio.pro<br>
+    Desenvolvido para Marco Tulio · Sincronização em tempo real com Jaqueline
+  </div>
+
+</div>
+
+<button class="print-btn no-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+
+</body>
+</html>

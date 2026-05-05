@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FinanceUber">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#10b981">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>FinanceUber</title>
 <script src="config.js" onerror="console.warn('config.js não encontrado — modo offline')"></script>
 <script>
@@ -339,6 +343,64 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
   </div></div>
 </div>
 
+<!-- Bem Imobilizado -->
+<div class="modal" id="modal-asset">
+  <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
+    <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:18px" id="asset-title">Novo Bem</h3>
+    <input type="hidden" id="asset-edit-id">
+    <div class="form-group"><label class="form-label">Descrição</label><input type="text" class="form-input" id="asset-name" placeholder="Ex: Apartamento Centro, Carro Quitado, Terreno..."></div>
+    <div class="form-group"><label class="form-label">Tipo</label>
+      <select class="form-select" id="asset-type"><option value="imovel">🏠 Imóvel</option><option value="veiculo">🚗 Veículo</option><option value="investimento">📈 Investimento</option><option value="outro">📦 Outro</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Valor de Mercado Atual (R$)</label><input type="number" inputmode="decimal" class="form-input" id="asset-value" placeholder="Ex: 45000" step="0.01" min="0"></div>
+    <div class="form-group"><label class="form-label">Observação (opcional)</label><input type="text" class="form-input" id="asset-note" placeholder="Ex: FIPE 2024, avaliação banco..."></div>
+    <button class="btn-primary" onclick="saveAsset()">Salvar</button>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-asset')">Cancelar</button>
+  </div></div>
+</div>
+
+<!-- Importar CSV -->
+<div class="modal" id="modal-csv">
+  <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
+    <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:6px">📊 Importar Extrato CSV</h3>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Exporte o extrato do seu banco em CSV e importe as transações.</p>
+    <!-- Step 1: upload -->
+    <div id="csv-step1">
+      <div class="form-group"><label class="form-label">Banco / Formato</label>
+        <select class="form-select" id="csv-bank">
+          <option value="auto">🔍 Auto-detectar</option>
+          <option value="nubank">Nubank Conta Corrente</option>
+          <option value="nubank_card">Nubank Cartão</option>
+          <option value="inter">Inter</option>
+          <option value="itau">Itaú</option>
+          <option value="generic">Genérico (CSV simples)</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Arquivo CSV</label>
+        <input type="file" id="csv-file" accept=".csv,.txt,.ofx" class="form-input" style="padding:10px" onchange="loadCsvFile()">
+      </div>
+      <div id="csv-error" style="display:none;background:#fee2e2;color:#dc2626;padding:10px;border-radius:10px;font-size:13px;margin-bottom:12px"></div>
+      <div style="background:#f0fdf4;border-radius:10px;padding:12px;font-size:12px;color:#065f46;margin-bottom:16px">
+        <strong>Como exportar:</strong><br>
+        • <strong>Nubank Conta:</strong> App → Extrato → ↑ → Exportar → CSV<br>
+        • <strong>Nubank Cartão:</strong> App → Cartão → Fatura → Exportar → CSV<br>
+        • <strong>Inter:</strong> App → Extrato → Exportar → CSV<br>
+        • <strong>Itaú:</strong> Internet Banking → Extrato → Exportar → CSV
+      </div>
+    </div>
+    <!-- Step 2: preview -->
+    <div id="csv-step2" style="display:none">
+      <div id="csv-summary" style="margin-bottom:12px"></div>
+      <div id="csv-table" style="overflow-y:auto;max-height:380px;font-size:12px"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn-secondary" style="flex:0 0 auto" onclick="document.getElementById('csv-step1').style.display='block';document.getElementById('csv-step2').style.display='none'">← Voltar</button>
+        <button class="btn-primary" onclick="importCsvRows()">✅ Importar Selecionados</button>
+      </div>
+    </div>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-csv')">Fechar</button>
+  </div></div>
+</div>
+
 <!-- Conta Bancária -->
 <div class="modal" id="modal-banco-conta">
   <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
@@ -440,10 +502,11 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
     </div>
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6">
       <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:10px">Backup de Dados</div>
-      <div style="display:flex;gap:10px">
+      <div style="display:flex;gap:10px;margin-bottom:8px">
         <button class="btn-secondary" style="flex:1" onclick="exportData()">📤 Exportar</button>
         <button class="btn-secondary" style="flex:1" onclick="document.getElementById('import-file').click()">📥 Importar</button>
       </div>
+      <button class="btn-secondary" style="width:100%;text-align:center" onclick="closeModal('modal-config');openModal('modal-csv')">📊 Importar Extrato CSV</button>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
     </div>
     <div style="margin-top:12px">
@@ -466,6 +529,25 @@ const CAR_CATS      = ['Combustível','Manutenção','IPVA','Seguro','Multa','Es
 const BROK_CATS     = ['Material Gráfico','Publicidade/Ads','Plataforma','Deslocamento','Outros'];
 const VARIABLE_CATS = ['Alimentação','Lazer','Saúde','Vestuário','Beleza','Educação','Transporte','Outros'];
 const FIN_COLORS    = ['#3b82f6','#f97316','#8b5cf6','#10b981','#ec4899','#06b6d4'];
+const ASSET_COLORS  = ['#10b981','#3b82f6','#f97316','#8b5cf6','#ec4899','#f59e0b'];
+const IMPORT_RULES  = [
+  {test:/uber.*technolog|uber do brasil|uber\s*[*]/i,   type:'inc',sub:'uber'},
+  {test:/salario|salário|folha pag|holerite|pgto funcional/i, type:'inc',sub:'salario'},
+  {test:/comissao|comissão|honorario|honorário/i,        type:'inc',sub:'comissao'},
+  {test:/posto|combustiv|gasolina|etanol|shell|ipiranga|br distribui|ale\s|petrob/i, type:'car',cat:'Combustível'},
+  {test:/oficina|mecanico|mecânico|borracharia|pneu|funilaria|retifica/i, type:'car',cat:'Manutenção'},
+  {test:/detran|ipva|licenciamento/i,                    type:'car',cat:'IPVA'},
+  {test:/seguro.*auto|seguro.*veic|porto seguro|allianz|hdimicron/i, type:'car',cat:'Seguro'},
+  {test:/mercado|supermercado|atacadao|assai|carrefour|extra\s|hortifruti|sacolao/i, type:'var',cat:'Alimentação'},
+  {test:/ifood|rappi|uber.*eat|restaurante|lanchonete|padaria|mc donalds|burger|pizza|sushi/i, type:'var',cat:'Alimentação'},
+  {test:/farmacia|drogaria|ultrafarma|panvel|raia|pacheco/i, type:'var',cat:'Saúde'},
+  {test:/smart fit|bodytech|bluefit|academia|gym/i,      type:'var',cat:'Saúde'},
+  {test:/netflix|spotify|amazon prime|youtube premium|disney|globoplay/i, type:'var',cat:'Lazer'},
+  {test:/shopee|magalu|americanas|aliexpress|mercado livre/i, type:'var',cat:'Vestuário'},
+  {test:/onibus|ônibus|metro|metrô|passagem|trem/i,      type:'var',cat:'Transporte'},
+  {test:/creci|cofeci|crecisp/i,                         type:'bro',cat:'Plataforma'},
+  {test:/facebook ads|google ads|meta ads|zap imoveis|olx|viva real/i, type:'bro',cat:'Publicidade/Ads'},
+];
 const AUDIT_CHECKS  = [
   'Conferir dinheiro em espécie',
   'Verificar extratos bancários',
@@ -488,6 +570,7 @@ function mkDefault() {
     costs: [],
     kmLog: [],
     financings: [],
+    assets: [],
     auditLog: [],
     carSetup: { kmPerLiter: 10, fuelPrice: 6.0 }
   };
@@ -506,6 +589,7 @@ function loadDb() {
     if (!Array.isArray(merged.costs)) merged.costs = [];
     if (!Array.isArray(merged.kmLog)) merged.kmLog = [];
     if (!Array.isArray(merged.financings)) merged.financings = [];
+    if (!Array.isArray(merged.assets)) merged.assets = [];
     if (!Array.isArray(merged.auditLog)) merged.auditLog = [];
     return merged;
   } catch { return mkDefault(); }
@@ -585,6 +669,7 @@ function loadMerge(data) {
   if (!Array.isArray(merged.costs)) merged.costs = [];
   if (!Array.isArray(merged.kmLog)) merged.kmLog = [];
   if (!Array.isArray(merged.financings)) merged.financings = [];
+  if (!Array.isArray(merged.assets)) merged.assets = [];
   if (!Array.isArray(merged.auditLog)) merged.auditLog = [];
   return merged;
 }
@@ -1089,6 +1174,198 @@ function deleteBankAccount(id) {
 }
 
 // ============================================================
+// ASSETS (Bens Imobilizados)
+// ============================================================
+const ASSET_TYPE_ICON = {imovel:'🏠',veiculo:'🚗',investimento:'📈',outro:'📦'};
+
+function openAssetModal(editId) {
+  document.getElementById('asset-edit-id').value=editId||'';
+  document.getElementById('asset-title').textContent=editId?'Editar Bem':'Novo Bem';
+  if(editId){
+    const a=db.assets.find(a=>a.id===editId);
+    if(a){document.getElementById('asset-name').value=a.name;document.getElementById('asset-type').value=a.type;document.getElementById('asset-value').value=a.value;document.getElementById('asset-note').value=a.note||'';}
+  } else {
+    ['asset-name','asset-value','asset-note'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('asset-type').value='imovel';
+  }
+  openModal('modal-asset');
+}
+function saveAsset() {
+  const editId=document.getElementById('asset-edit-id').value;
+  const name=document.getElementById('asset-name').value.trim();
+  const type=document.getElementById('asset-type').value;
+  const value=parseFloat(document.getElementById('asset-value').value)||0;
+  const note=document.getElementById('asset-note').value.trim();
+  if(!name) return alert('Digite a descrição do bem.');
+  if(!value||value<=0) return alert('Digite o valor de mercado.');
+  if(editId){const a=db.assets.find(a=>a.id===editId);if(a)Object.assign(a,{name,type,value,note});}
+  else db.assets.push({id:uid(),name,type,value,note,color:ASSET_COLORS[db.assets.length%ASSET_COLORS.length]});
+  saveDb(); closeModal('modal-asset'); renderSection(currentSection);
+}
+function deleteAsset(id) {
+  if(!confirm('Remover este bem?')) return;
+  db.assets=db.assets.filter(a=>a.id!==id);
+  saveDb(); renderSection(currentSection);
+}
+
+// ============================================================
+// CSV IMPORT
+// ============================================================
+let csvRows=[];
+
+function parseCsvLine(line,delim) {
+  const res=[]; let cur='',inQ=false;
+  for(const ch of line){if(ch==='"'){inQ=!inQ;}else if(ch===delim&&!inQ){res.push(cur.trim());cur='';}else cur+=ch;}
+  res.push(cur.trim()); return res;
+}
+function parseAmount(s) {
+  if(!s&&s!==0) return null;
+  const c=String(s).replace(/[^\d.,\-+]/g,'');
+  if(!c) return null;
+  if(c.includes(',')&&c.includes('.')) return parseFloat(c.replace(/\./g,'').replace(',','.'));
+  if(c.includes(',')) return parseFloat(c.replace(',','.'));
+  return parseFloat(c);
+}
+function parseDateStr(s) {
+  if(!s) return null; s=s.trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10);
+  if(/^\d{2}\/\d{2}\/\d{4}/.test(s)){const[d,m,y]=s.split('/');return `${y}-${m}-${d}`;}
+  if(/^\d{2}\/\d{2}\/\d{2}/.test(s)){const[d,m,y]=s.split('/');return `20${y}-${m}-${d}`;}
+  return null;
+}
+function suggestCsvType(desc) {
+  const d=(desc||'').toLowerCase();
+  for(const r of IMPORT_RULES){if(r.test.test(d)) return {type:r.type,sub:r.sub,cat:r.cat};}
+  return null;
+}
+function loadCsvFile() {
+  const file=document.getElementById('csv-file').files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try { parseCsvContent(e.target.result); }
+    catch(err){ showCsvError('Erro ao ler arquivo: '+err.message); }
+  };
+  reader.readAsText(file,'utf-8');
+}
+function showCsvError(msg) {
+  const el=document.getElementById('csv-error');
+  el.textContent=msg; el.style.display='block';
+}
+function parseCsvContent(text) {
+  document.getElementById('csv-error').style.display='none';
+  const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
+  if(lines.length<2) return showCsvError('Arquivo com menos de 2 linhas. Verifique o formato.');
+  // Detect delimiter
+  const delim=lines[0].includes(';')?';':',';
+  const headers=parseCsvLine(lines[0],delim).map(h=>h.replace(/^"|"$/g,'').toLowerCase().trim());
+  // Detect bank format
+  const fmt=document.getElementById('csv-bank').value;
+  let dateIdx=-1,amtIdx=-1,descIdx=-1;
+  const find=(...names)=>{for(const n of names){const i=headers.findIndex(h=>h.includes(n));if(i>=0)return i;}return -1;};
+  if(fmt==='nubank'||fmt==='auto'&&headers.includes('identificador')) {
+    dateIdx=find('data'); amtIdx=find('valor'); descIdx=find('descri');
+  } else if(fmt==='nubank_card'||fmt==='auto'&&headers.includes('date')&&headers.includes('title')) {
+    dateIdx=find('date'); amtIdx=find('amount'); descIdx=find('title');
+  } else if(fmt==='inter'||fmt==='auto'&&delim===';') {
+    dateIdx=find('data'); amtIdx=find('valor'); descIdx=find('descri','histó','histo');
+  } else if(fmt==='itau') {
+    dateIdx=0; descIdx=1; amtIdx=2;
+  } else {
+    // generic: try to guess
+    dateIdx=find('data','date'); amtIdx=find('valor','amount','value'); descIdx=find('descri','memo','hist','title');
+  }
+  if(dateIdx<0||amtIdx<0||descIdx<0) return showCsvError(`Colunas não identificadas. Cabeçalho: ${headers.join(' | ')}. Tente selecionar o banco manualmente.`);
+
+  csvRows=[];
+  for(let i=1;i<lines.length;i++) {
+    const cols=parseCsvLine(lines[i],delim);
+    if(cols.length<Math.max(dateIdx,amtIdx,descIdx)+1) continue;
+    const date=parseDateStr(cols[dateIdx]);
+    const amount=parseAmount(cols[amtIdx]);
+    const desc=(cols[descIdx]||'').replace(/^"|"$/g,'').trim();
+    if(!date||amount===null||isNaN(amount)||!desc) continue;
+    const sug=suggestCsvType(desc);
+    // Determine default type
+    let type='skip', sub='', cat='Outros';
+    if(sug){type=sug.type;sub=sug.sub||'';cat=sug.cat||'Outros';}
+    else if(amount>0) {type='inc';sub='uber';}
+    else {type='var';cat='Outros';}
+    csvRows.push({date,amount,desc,type,sub,cat,selected:sug!==null||amount>0});
+  }
+  if(!csvRows.length) return showCsvError('Nenhuma transação válida encontrada. Verifique o formato do arquivo.');
+  renderCsvPreview();
+}
+function csvTypeOptions(row) {
+  const opts=[
+    ['skip','— Ignorar'],['inc_uber','💰 Renda: Uber'],['inc_sal','💰 Renda: Jaqueline'],['inc_com','💰 Renda: Comissão'],
+    ['var_Alimentação','🛒 Alimentação'],['var_Lazer','🛒 Lazer'],['var_Saúde','🛒 Saúde'],
+    ['var_Vestuário','🛒 Vestuário'],['var_Beleza','🛒 Beleza'],['var_Educação','🛒 Educação'],
+    ['var_Transporte','🛒 Transporte'],['var_Outros','🛒 Outros'],
+    ['car_Combustível','⛽ Carro: Combustível'],['car_Manutenção','🔧 Carro: Manutenção'],
+    ['car_IPVA','🚗 Carro: IPVA'],['car_Seguro','🚗 Carro: Seguro'],['car_Outros','🚗 Carro: Outros'],
+    ['bro_Material Gráfico','💼 Correto: Material'],['bro_Publicidade/Ads','💼 Correto: Ads'],
+    ['bro_Plataforma','💼 Correto: Plataforma'],['bro_Outros','💼 Correto: Outros'],
+  ];
+  const cur=row.type==='skip'?'skip':row.type==='inc'?`inc_${row.sub}`:`${row.type}_${row.cat}`;
+  return opts.map(([v,l])=>`<option value="${v}"${v===cur?' selected':''}>${l}</option>`).join('');
+}
+function setCsvRowType(idx,val) {
+  const row=csvRows[idx]; if(!row) return;
+  if(val==='skip'){row.type='skip';}
+  else if(val.startsWith('inc_')){row.type='inc';row.sub=val.slice(4);}
+  else {const[t,...rest]=val.split('_');row.type=t;row.cat=rest.join('_');}
+}
+function setCsvRowSelected(idx,v) { if(csvRows[idx]) csvRows[idx].selected=v; }
+function renderCsvPreview() {
+  document.getElementById('csv-step1').style.display='none';
+  document.getElementById('csv-step2').style.display='block';
+  const inc=csvRows.filter(r=>r.amount>0).length;
+  const exp=csvRows.filter(r=>r.amount<0).length;
+  const sel=csvRows.filter(r=>r.selected&&r.type!=='skip').length;
+  document.getElementById('csv-summary').innerHTML=`
+    <div style="background:#f0fdf4;border-radius:10px;padding:10px;font-size:13px;margin-bottom:8px">
+      <strong>${csvRows.length}</strong> transações encontradas · <span style="color:#059669">${inc} entradas</span> · <span style="color:#dc2626">${exp} saídas</span> · <strong>${sel} selecionadas</strong>
+    </div>`;
+  const rows=csvRows.slice(0,150).map((r,i)=>`
+    <tr style="background:${r.selected&&r.type!=='skip'?'white':'#f9fafb'};border-bottom:1px solid #f3f4f6">
+      <td style="padding:6px 4px;text-align:center"><input type="checkbox" ${r.selected?'checked':''} onchange="setCsvRowSelected(${i},this.checked);renderCsvPreview()"></td>
+      <td style="padding:6px 4px;font-size:11px;color:#6b7280;white-space:nowrap">${r.date.substring(5).split('-').reverse().join('/')}</td>
+      <td style="padding:6px 4px;font-size:12px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.desc}">${r.desc}</td>
+      <td style="padding:6px 4px;text-align:right;font-weight:600;color:${r.amount>=0?'#059669':'#dc2626'};white-space:nowrap">${r.amount>=0?'+':''}R$${Math.abs(r.amount).toFixed(2)}</td>
+      <td style="padding:6px 4px"><select style="font-size:11px;border:1px solid #e5e7eb;border-radius:6px;padding:3px 4px;width:100%;max-width:130px" onchange="setCsvRowType(${i},this.value);renderCsvPreview()">${csvTypeOptions(r)}</select></td>
+    </tr>`).join('');
+  document.getElementById('csv-table').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+      <thead style="position:sticky;top:0;background:white;z-index:1"><tr style="background:#f9fafb">
+        <th style="padding:6px 4px;width:30px"></th>
+        <th style="padding:6px 4px;width:50px;font-size:11px;color:#6b7280;font-weight:500">Data</th>
+        <th style="padding:6px 4px;font-size:11px;color:#6b7280;font-weight:500">Descrição</th>
+        <th style="padding:6px 4px;width:70px;font-size:11px;color:#6b7280;font-weight:500;text-align:right">Valor</th>
+        <th style="padding:6px 4px;width:140px;font-size:11px;color:#6b7280;font-weight:500">Tipo</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${csvRows.length>150?`<div style="text-align:center;padding:8px;font-size:12px;color:#9ca3af">Exibindo 150 de ${csvRows.length} — as demais também serão importadas.</div>`:''}`;
+}
+function importCsvRows() {
+  const toImport=csvRows.filter(r=>r.selected&&r.type!=='skip');
+  if(!toImport.length) return alert('Selecione ao menos uma transação.');
+  let cnt=0;
+  toImport.forEach(r=>{
+    if(r.type==='inc'){
+      db.income.push({id:uid(),type:r.sub||'uber',amount:Math.abs(r.amount),date:r.date,note:'[CSV] '+r.desc});
+    } else if(['var','car','bro'].includes(r.type)){
+      const tmap={var:'variable',car:'car',bro:'brokerage'};
+      db.costs.push({id:uid(),type:tmap[r.type],category:r.cat||'Outros',amount:Math.abs(r.amount),date:r.date,note:'[CSV] '+r.desc});
+    }
+    cnt++;
+  });
+  saveDb(); closeModal('modal-csv'); renderSection(currentSection);
+  alert(`✅ ${cnt} transações importadas com sucesso!`);
+}
+
+// ============================================================
 // KM LOG
 // ============================================================
 function openKmModal() {
@@ -1299,11 +1576,15 @@ function renderDashboard() {
   document.getElementById('dash-uber-atual').textContent=fmt(uberMes);
   document.getElementById('dash-uber-meta').textContent=fmt(mGoal);
   // Patrimônio
-  const banks=bankTotal(), debts=totalDebt(), pat=banks-debts;
+  const banks=bankTotal(), debts=totalDebt();
+  const standaloneAssets=(db.assets||[]).reduce((s,a)=>s+a.value,0);
+  const finAssetsDash=(db.financings||[]).reduce((s,f)=>s+(f.assetValue||0),0);
+  const finRemDash=(db.financings||[]).reduce((s,f)=>s+financingRemaining(f),0);
+  const pat=banks+standaloneAssets+finAssetsDash-debts-finRemDash;
   const patEl=document.getElementById('dash-patrimonio');
   patEl.textContent=(pat<0?'-':'')+fmt(Math.abs(pat));
   patEl.style.color=pat>=0?'#059669':'#dc2626';
-  document.getElementById('dash-patrimonio-sub').textContent=`Bancos ${fmt(banks)}`;
+  document.getElementById('dash-patrimonio-sub').textContent=`Bancos ${fmt(banks)}${standaloneAssets+finAssetsDash>0?' · Bens '+fmt(standaloneAssets+finAssetsDash):''}`;
   // Contas
   const pendingCount=db.bills.filter(b=>!isBillPaid(b.id,ym)).length;
   document.getElementById('dash-contas-count').textContent=pendingCount;
@@ -1486,10 +1767,11 @@ function renderResumo() {
   const banks=bankTotal(), debts=totalDebt();
   const finRem=db.financings.reduce((s,f)=>s+financingRemaining(f),0);
   const finAssets=db.financings.reduce((s,f)=>s+(f.assetValue||0),0);
-  const ativos=banks+finAssets;
+  const standaloneAssets=(db.assets||[]).reduce((s,a)=>s+a.value,0);
+  const ativos=banks+finAssets+standaloneAssets;
   const passivos=debts+finRem;
   const patLiq=ativos-passivos;
-  const typeIcon={imovel:'🏠',veiculo:'🚗',outro:'📦'};
+  const typeIcon={imovel:'🏠',veiculo:'🚗',investimento:'📈',outro:'📦'};
 
   let mainContent='';
   if(subTab.resumo==='orcamento') {
@@ -1518,9 +1800,10 @@ function renderResumo() {
   } else {
     // Balanço Patrimonial
     const bankRows=db.bankAccounts.map(b=>`<div class="stat-row"><span style="color:#6b7280">🏦 ${b.bank}</span><span style="font-weight:600;color:${b.balance>=0?'#059669':'#dc2626'}">${fmt(b.balance)}</span></div>`).join('');
-    const finAssetRows=db.financings.map(f=>`<div class="stat-row"><span style="color:#6b7280">${typeIcon[f.type]||'📦'} ${f.name}</span><span style="font-weight:600;color:#374151">${fmt(f.assetValue||0)}</span></div>`).join('');
+    const finAssetRows=db.financings.filter(f=>f.assetValue>0).map(f=>`<div class="stat-row"><span style="color:#6b7280">${typeIcon[f.type]||'📦'} ${f.name}</span><span style="font-weight:600;color:#374151">${fmt(f.assetValue||0)}</span></div>`).join('');
+    const standaloneRows=(db.assets||[]).map(a=>`<div class="stat-row"><span style="color:#6b7280">${typeIcon[a.type]||'📦'} ${a.name}</span><div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;color:#374151">${fmt(a.value)}</span><button onclick="openAssetModal('${a.id}')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0">✏️</button><button onclick="deleteAsset('${a.id}')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:#ef4444">✕</button></div></div>`).join('');
     const debtRows=db.debts.map(d=>`<div class="stat-row"><span style="color:#6b7280">💳 ${d.name}</span><span style="font-weight:600;color:#dc2626">${fmt(d.remaining)}</span></div>`).join('');
-    const finPassRows=db.financings.map(f=>`<div class="stat-row"><span style="color:#6b7280">${typeIcon[f.type]||'📦'} ${f.name} (saldo)</span><span style="font-weight:600;color:#dc2626">${fmt(financingRemaining(f))}</span></div>`).join('');
+    const finPassRows=db.financings.map(f=>`<div class="stat-row"><span style="color:#6b7280">${typeIcon[f.type]||'📦'} ${f.name}</span><span style="font-weight:600;color:#dc2626">${fmt(financingRemaining(f))}</span></div>`).join('');
     mainContent=`
       <div class="card" style="background:linear-gradient(135deg,${patLiq>=0?'#10b981,#059669':'#ef4444,#dc2626'});color:white;margin-bottom:12px">
         <div style="font-size:12px;opacity:.8">Patrimônio Líquido</div>
@@ -1532,15 +1815,21 @@ function renderResumo() {
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
         <div class="card" style="margin-bottom:0">
-          <div style="font-weight:600;color:#059669;margin-bottom:10px;font-size:14px">ATIVOS</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-weight:600;color:#059669;font-size:14px">ATIVOS</div>
+          </div>
           ${bankRows||'<div style="font-size:13px;color:#9ca3af">Sem contas</div>'}
-          ${finAssets>0?`<div style="font-size:12px;font-weight:600;color:#6b7280;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">Bens Financiados</div>${finAssetRows}`:''}
+          ${finAssets>0?`<div style="font-size:11px;font-weight:600;color:#6b7280;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">Bens Financiados</div>${finAssetRows}`:''}
+          ${standaloneAssets>0||true?`<div style="font-size:11px;font-weight:600;color:#6b7280;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center">
+            <span>Bens Próprios</span>
+            <button onclick="openAssetModal()" style="background:#f0fdf4;border:none;border-radius:6px;padding:2px 8px;font-size:11px;color:#059669;cursor:pointer;font-weight:600">+ Adicionar</button>
+          </div>${standaloneRows||'<div style="font-size:12px;color:#9ca3af;padding:4px 0">Nenhum bem cadastrado.</div>'}`:''}
           <div class="stat-row" style="border-top:2px solid #d1fae5;margin-top:10px;padding-top:10px"><span style="font-weight:700;color:#059669">Total</span><span style="font-weight:800;color:#059669">${fmt(ativos)}</span></div>
         </div>
         <div class="card" style="margin-bottom:0">
           <div style="font-weight:600;color:#dc2626;margin-bottom:10px;font-size:14px">PASSIVOS</div>
           ${debtRows||'<div style="font-size:13px;color:#9ca3af">Sem dívidas</div>'}
-          ${finRem>0?`<div style="font-size:12px;font-weight:600;color:#6b7280;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">Saldo Financiamentos</div>${finPassRows}`:''}
+          ${finRem>0?`<div style="font-size:11px;font-weight:600;color:#6b7280;margin-top:8px;padding-top:8px;border-top:1px solid #f3f4f6">Financiamentos</div>${finPassRows}`:''}
           <div class="stat-row" style="border-top:2px solid #fee2e2;margin-top:10px;padding-top:10px"><span style="font-weight:700;color:#dc2626">Total</span><span style="font-weight:800;color:#dc2626">${fmt(passivos)}</span></div>
         </div>
       </div>
