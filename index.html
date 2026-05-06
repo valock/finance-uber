@@ -461,22 +461,46 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
       <button class="type-btn active" id="room-btn-new" onclick="setRoomMode('new')">✨ Criar sala</button>
       <button class="type-btn" id="room-btn-join" onclick="setRoomMode('join')">🔑 Entrar</button>
     </div>
+
+    <!-- CRIAR -->
     <div id="room-new-section">
-      <p style="font-size:13px;color:#6b7280;margin-bottom:4px">Código da sala:</p>
-      <div class="code-big" id="room-code-display">------</div>
-      <div style="background:#fef3c7;border-radius:10px;padding:10px;margin-bottom:12px;font-size:12px;color:#92400e">
-        🔒 Um <strong>token de acesso</strong> será gerado ao criar. Guarde e compartilhe os dois com sua esposa.
+      <div class="form-group">
+        <label class="form-label">Código da sala <span style="color:#9ca3af;font-weight:400">(ex: MARCO ou FAMILIA)</span></label>
+        <input type="text" class="form-input" id="room-new-code" placeholder="MARCO"
+          maxlength="12" style="text-transform:uppercase;letter-spacing:3px;font-size:22px;font-weight:700;text-align:center"
+          oninput="this.value=this.value.replace(/[^A-Z0-9]/gi,'').toUpperCase()">
       </div>
-      <button onclick="copyRoomCode()" class="btn-outline" style="width:100%;margin-bottom:10px">📋 Copiar código completo</button>
-      <button class="btn-primary" id="room-create-btn" onclick="createRoom()">Criar sala com estes dados</button>
+      <div class="form-group">
+        <label class="form-label">PIN de acesso <span style="color:#9ca3af;font-weight:400">(4–8 dígitos)</span></label>
+        <input type="tel" class="form-input" id="room-new-pin" placeholder="1234"
+          maxlength="8" style="font-size:28px;font-weight:800;letter-spacing:8px;text-align:center" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirme o PIN</label>
+        <input type="tel" class="form-input" id="room-new-pin2" placeholder="1234"
+          maxlength="8" style="font-size:28px;font-weight:800;letter-spacing:8px;text-align:center" inputmode="numeric">
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;margin-bottom:14px;font-size:12px;color:#065f46">
+        💡 Depois de criar, mande o <strong>código</strong> e o <strong>PIN</strong> para a Jaqueline pelo WhatsApp. Só isso!
+      </div>
+      <button class="btn-primary" id="room-create-btn" onclick="createRoom()">✅ Criar Sala</button>
     </div>
+
+    <!-- ENTRAR -->
     <div id="room-join-section" style="display:none">
       <div class="form-group">
-        <label class="form-label">Código completo da sala (CÓDIGO-TOKEN)</label>
-        <input type="text" class="form-input" id="room-join-input" placeholder="Ex: ABC123-XXXXXXXXXXXX" style="text-transform:uppercase;letter-spacing:2px;font-size:16px" maxlength="32" oninput="this.value=this.value.toUpperCase()">
+        <label class="form-label">Código da sala</label>
+        <input type="text" class="form-input" id="room-join-code" placeholder="MARCO"
+          maxlength="12" style="text-transform:uppercase;letter-spacing:3px;font-size:22px;font-weight:700;text-align:center"
+          oninput="this.value=this.value.replace(/[^A-Z0-9]/gi,'').toUpperCase()">
       </div>
-      <p style="font-size:12px;color:#9ca3af;margin-bottom:16px">Cole o código completo enviado pelo criador da sala. Os dados da sala substituirão seus dados locais.</p>
-      <button class="btn-primary" onclick="joinRoom()">Entrar na Sala</button>
+      <div class="form-group">
+        <label class="form-label">PIN de acesso</label>
+        <input type="tel" class="form-input" id="room-join-pin" placeholder="1234"
+          maxlength="8" style="font-size:28px;font-weight:800;letter-spacing:8px;text-align:center" inputmode="numeric">
+      </div>
+      <p style="font-size:12px;color:#9ca3af;margin-bottom:16px">Os dados da sala serão carregados no seu dispositivo.</p>
+      <button class="btn-primary" onclick="joinRoom()">🔑 Entrar na Sala</button>
     </div>
   </div></div>
 </div>
@@ -489,11 +513,19 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
     <div class="form-group"><label class="form-label">Nome do(a) Cônjuge</label><input type="text" class="form-input" id="cfg-spouse" placeholder="Nome da esposa/marido"></div>
     <button class="btn-primary" onclick="saveConfig()">Salvar</button>
     <div id="cfg-room-info" style="margin-top:20px;padding:14px;background:#f0fdf4;border-radius:12px;border:1px solid #bbf7d0;display:none">
-      <div style="font-size:13px;font-weight:600;color:#065f46;margin-bottom:8px">👨‍👩‍ Sala Familiar</div>
-      <div style="font-size:12px;color:#6b7280;margin-bottom:4px">Código:</div>
-      <div style="font-size:18px;font-weight:800;letter-spacing:4px;color:#059669;margin-bottom:10px" id="cfg-room-code">------</div>
+      <div style="font-size:13px;font-weight:600;color:#065f46;margin-bottom:10px">👨‍👩‍ Sala Familiar Ativa</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="background:white;border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#9ca3af;margin-bottom:2px">CÓDIGO</div>
+          <div style="font-size:18px;font-weight:800;letter-spacing:3px;color:#059669" id="cfg-room-code">---</div>
+        </div>
+        <div style="background:white;border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:#9ca3af;margin-bottom:2px">PIN</div>
+          <div style="font-size:18px;font-weight:800;letter-spacing:4px;color:#6366f1" id="cfg-room-pin">****</div>
+        </div>
+      </div>
       <div style="display:flex;gap:8px">
-        <button class="btn-outline" style="flex:1;font-size:13px" onclick="copyCurrentRoomCode()">📋 Copiar código</button>
+        <button class="btn-outline" style="flex:1;font-size:13px" onclick="copyCurrentRoomCode()">📋 Copiar p/ WhatsApp</button>
         <button style="flex:1;padding:8px;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif" onclick="leaveRoom()">🚪 Sair</button>
       </div>
     </div>
@@ -605,7 +637,6 @@ let resChart       = null;
 let amortChart     = null;
 let currentAuditWeek = '';
 let roomMode       = 'new';
-let generatedCode  = '';
 
 // ============================================================
 // SUPABASE
@@ -1435,8 +1466,12 @@ function openConfigModal() {
   document.getElementById('cfg-spouse').value=db.profile.spouse||'';
   const info=document.getElementById('cfg-room-info');
   const conn=document.getElementById('cfg-room-connect');
-  if(roomCode){info.style.display='block';conn.style.display='none';document.getElementById('cfg-room-code').textContent=roomCode;}
-  else if(sb){info.style.display='none';conn.style.display='block';}
+  if(roomCode){
+    info.style.display='block';conn.style.display='none';
+    document.getElementById('cfg-room-code').textContent=roomCode;
+    const pinEl=document.getElementById('cfg-room-pin');
+    if(pinEl) pinEl.textContent=roomToken?'•'.repeat(roomToken.length):'••••';
+  } else if(sb){info.style.display='none';conn.style.display='block';}
   else{info.style.display='none';conn.style.display='none';}
   openModal('modal-config');
 }
@@ -1461,7 +1496,7 @@ function confirmClear() {
 }
 
 // ============================================================
-// SALA FAMILIAR (com token de segurança)
+// SALA FAMILIAR (código + PIN)
 // ============================================================
 function openRoomPanel() { openModal('modal-room'); setRoomMode('new'); }
 function setRoomMode(mode) {
@@ -1470,56 +1505,65 @@ function setRoomMode(mode) {
   document.getElementById('room-btn-join').classList.toggle('active',mode==='join');
   document.getElementById('room-new-section').style.display=mode==='new'?'block':'none';
   document.getElementById('room-join-section').style.display=mode==='join'?'block':'none';
-  if(mode==='new'&&!generatedCode){generatedCode=generateCode();document.getElementById('room-code-display').textContent=generatedCode;}
-}
-function copyRoomCode() {
-  if(!generatedCode) return;
-  const code=generatedCode+'-'+generateToken();
-  navigator.clipboard?.writeText(code).then(()=>alert('Código copiado:\n'+code+'\n\nEnvie para sua esposa via WhatsApp.')).catch(()=>alert('Código:\n'+code));
 }
 function copyCurrentRoomCode() {
   if(!roomCode) return;
-  const combined=roomToken?roomCode+'-'+roomToken:roomCode;
-  navigator.clipboard?.writeText(combined).then(()=>alert('Código copiado: '+combined)).catch(()=>alert('Código: '+combined));
+  const pin = roomToken||'(PIN salvo localmente)';
+  const msg = 'Código da sala: '+roomCode+'\nPIN de acesso: '+pin+'\n\nAcesse fin.marcotulio.pro → Sala Familiar → Entrar';
+  navigator.clipboard?.writeText(msg)
+    .then(()=>alert('✅ Copiado! Cole no WhatsApp:\n\n'+msg))
+    .catch(()=>alert('Copie e envie para a Jaqueline:\n\n'+msg));
+}
+function roomSetupError(msg) {
+  if(!msg) return '';
+  if(msg.includes('schema cache')||msg.includes('Could not find')) {
+    return 'Função RPC não encontrada no Supabase.\n\n📋 Para corrigir:\n1. Acesse supabase.com → seu projeto\n2. Clique em SQL Editor → New Query\n3. Cole o conteúdo do arquivo supabase-setup.sql\n4. Clique em Run\n5. Tente criar a sala novamente.';
+  }
+  if(msg.includes('já existe')||msg.includes('already exists')) return 'Já existe uma sala com este código. Escolha outro.';
+  return msg;
 }
 async function createRoom() {
   if(!sb) return alert('Supabase não configurado.');
-  const code=generatedCode||generateCode();
-  const token=generateToken();
+  const code = (document.getElementById('room-new-code').value||'').trim().toUpperCase();
+  const pin  = (document.getElementById('room-new-pin').value||'').trim();
+  const pin2 = (document.getElementById('room-new-pin2').value||'').trim();
+  if(code.length<3) return alert('O código da sala deve ter pelo menos 3 caracteres.\nEx: MARCO ou FAMILIA');
+  if(pin.length<4)  return alert('O PIN deve ter pelo menos 4 dígitos.');
+  if(!/^\d+$/.test(pin)) return alert('O PIN deve conter apenas números.');
+  if(pin!==pin2)    return alert('Os PINs não conferem. Verifique e tente novamente.');
   const btn=document.getElementById('room-create-btn');
   btn.textContent='Criando...'; btn.disabled=true;
   try {
-    const {error}=await sb.rpc('rpc_create_room',{p_code:code,p_token:token,p_data:db});
-    if(error) throw error;
-    roomCode=code; roomToken=token;
-    localStorage.setItem(ROOM_KEY,code); localStorage.setItem(ROOM_TOKEN_KEY,token);
-    subscribeToRoom(code); closeModal('modal-room'); updateRoomBadge(); setSyncStatus('ok');
-    const combined=code+'-'+token;
-    alert('Sala criada! ✅\n\nCódigo completo para compartilhar com sua esposa:\n\n'+combined+'\n\nGuarde este código com segurança.');
-  } catch(e) { alert('Erro ao criar sala: '+(e.message||'Tente novamente.')); setSyncStatus('error'); }
-  btn.textContent='Criar sala com estes dados'; btn.disabled=false;
+    const {error}=await sb.rpc('rpc_create_room',{p_code:code,p_token:pin,p_data:db});
+    if(error) throw new Error(roomSetupError(error.message));
+    roomCode=code; roomToken=pin;
+    localStorage.setItem(ROOM_KEY,code); localStorage.setItem(ROOM_TOKEN_KEY,pin);
+    subscribeToRoom(code); updateRoomBadge(); setSyncStatus('ok');
+    closeModal('modal-room');
+    alert('Sala criada! ✅\n\nEnvie para a Jaqueline pelo WhatsApp:\n\n🏠 Código: '+code+'\n🔑 PIN: '+pin+'\n\nEla entra em: fin.marcotulio.pro → ⚙️ → Conectar Sala → Entrar');
+  } catch(e) { alert('Erro ao criar sala:\n\n'+(e.message||'Tente novamente.')); setSyncStatus('error'); }
+  btn.textContent='✅ Criar Sala'; btn.disabled=false;
 }
 async function joinRoom() {
   if(!sb) return alert('Supabase não configurado.');
-  const input=document.getElementById('room-join-input').value.trim().toUpperCase();
-  const parts=input.split('-');
-  const code=parts[0];
-  const token=parts.slice(1).join('-');
-  if(!code||code.length<4) return alert('Digite o código completo da sala (CÓDIGO-TOKEN).');
-  if(!token) return alert('O código deve incluir o token de acesso após o hífen.\nExemplo: ABC123-XXXXXXXXXXXX');
+  const code = (document.getElementById('room-join-code').value||'').trim().toUpperCase();
+  const pin  = (document.getElementById('room-join-pin').value||'').trim();
+  if(code.length<3) return alert('Digite o código da sala.');
+  if(pin.length<4)  return alert('Digite o PIN de acesso (mínimo 4 dígitos).');
   setSyncStatus('syncing');
   try {
     const {data,error}=await sb.from('room_data').select('data').eq('room_code',code).maybeSingle();
     if(error) throw error;
-    if(!data) return alert('Sala não encontrada. Verifique o código.');
-    const {data:valid}=await sb.rpc('rpc_verify_token',{p_code:code,p_token:token});
-    if(!valid) return alert('Token inválido. Verifique o código completo enviado pelo criador da sala.');
-    if(!confirm('Entrar na sala '+code+'?\n\nOs dados da sala serão carregados.')) {setSyncStatus(roomCode?'ok':'offline');return;}
+    if(!data) return (setSyncStatus('error'), alert('Sala "'+code+'" não encontrada.\nVerifique o código e tente novamente.'));
+    const {data:valid,error:verr}=await sb.rpc('rpc_verify_token',{p_code:code,p_token:pin});
+    if(verr) throw new Error(roomSetupError(verr.message));
+    if(!valid) return (setSyncStatus('error'), alert('PIN incorreto.\nVerifique o PIN enviado pelo criador da sala.'));
+    if(!confirm('Entrar na sala "'+code+'"?\n\nOs dados da sala serão carregados no seu dispositivo.')) {setSyncStatus(roomCode?'ok':'offline');return;}
     db=loadMerge(data.data); saveLocalOnly();
-    roomCode=code; roomToken=token;
-    localStorage.setItem(ROOM_KEY,code); localStorage.setItem(ROOM_TOKEN_KEY,token);
+    roomCode=code; roomToken=pin;
+    localStorage.setItem(ROOM_KEY,code); localStorage.setItem(ROOM_TOKEN_KEY,pin);
     subscribeToRoom(code); closeModal('modal-room'); updateHeader(); renderSection(currentSection); updateRoomBadge(); setSyncStatus('ok');
-  } catch(e) { alert('Erro: '+(e.message||'Sala não encontrada.')); setSyncStatus('error'); }
+  } catch(e) { alert('Erro:\n\n'+(e.message||'Sala não encontrada.')); setSyncStatus('error'); }
 }
 function leaveRoom() {
   if(!confirm('Sair da sala? Os dados locais serão mantidos.')) return;
@@ -1530,8 +1574,14 @@ function leaveRoom() {
 }
 function updateRoomBadge() {
   const btn=document.getElementById('btn-room');
-  if(roomCode&&sb){btn.style.display='block';document.getElementById('room-badge-code').textContent=roomCode;}
-  else btn.style.display='none';
+  const pinEl=document.getElementById('cfg-room-pin');
+  const codeEl=document.getElementById('cfg-room-code');
+  if(roomCode&&sb){
+    btn.style.display='block';
+    document.getElementById('room-badge-code').textContent=roomCode;
+    if(codeEl) codeEl.textContent=roomCode;
+    if(pinEl)  pinEl.textContent=roomToken?'•'.repeat(roomToken.length):'••••';
+  } else btn.style.display='none';
 }
 
 // ============================================================
