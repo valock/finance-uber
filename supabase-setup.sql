@@ -101,7 +101,15 @@ $$;
 -- ============================================================
 -- REALTIME (leituras em tempo real continuam funcionando)
 -- ============================================================
-ALTER PUBLICATION supabase_realtime ADD TABLE room_data;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'room_data'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE room_data;
+  END IF;
+END $$;
 
 -- ============================================================
 -- RESUMO DA SEGURANÇA
