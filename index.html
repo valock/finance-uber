@@ -135,7 +135,7 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
       </div>
     </div>
     <div style="display:flex;gap:8px">
-      <button onclick="openKmModal()" style="flex:1;padding:9px;background:#e0f2fe;color:#0369a1;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">📏 Km</button>
+      <button onclick="openKmModal()" style="flex:1;padding:9px;background:#e0f2fe;color:#0369a1;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">🛣️ Odômetro</button>
       <button onclick="openIncomeModal()" style="flex:1;padding:9px;background:#d1fae5;color:#059669;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">💰 Renda</button>
       <button onclick="switchSection('gastos');switchSubTab('gastos','carro')" style="flex:1;padding:9px;background:#fff7ed;color:#ea580c;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">⛽ Gasto</button>
     </div>
@@ -169,6 +169,18 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
     <div style="font-weight:600;color:#111827;margin-bottom:10px">📅 Próximas Contas</div>
     <div id="dash-upcoming"></div>
   </div>
+
+  <!-- 💡 Sugestões contextuais -->
+  <div id="dash-suggestions"></div>
+
+  <!-- 🔥 Streaks -->
+  <div id="dash-streaks"></div>
+
+  <!-- 🚗 Saúde do Carro -->
+  <div id="dash-car-health"></div>
+
+  <!-- 🏆 Conquistas -->
+  <div id="dash-achievements"></div>
 </section>
 
 <!-- RENDA -->
@@ -226,12 +238,61 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
     <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:18px">Nova Renda</h3>
     <div class="type-switch">
       <button class="type-btn active" id="inc-btn-uber" onclick="setIncType('uber')">🚗 Uber</button>
-      <button class="type-btn" id="inc-btn-sal" onclick="setIncType('salario')">👩 Jaqueline</button>
+      <button class="type-btn" id="inc-btn-sal" onclick="setIncType('salario')">👩 <span id="inc-btn-sal-label">Cônjuge</span></button>
       <button class="type-btn" id="inc-btn-com" onclick="setIncType('comissao')">🤝 Comissão</button>
     </div>
-    <div class="form-group"><label class="form-label">Valor (R$)</label><input type="number" inputmode="decimal" class="form-input" id="inc-amount" placeholder="0,00" step="0.01" min="0"></div>
+
+    <!-- Holerite toggle (só aparece p/ salário) -->
+    <div id="inc-holerite-toggle" style="display:none;margin-bottom:14px">
+      <label style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#fce7f3;border-radius:10px;cursor:pointer">
+        <span style="font-size:13px;font-weight:600;color:#831843">🧾 Detalhar holerite (descontos)</span>
+        <input type="checkbox" id="inc-holerite-on" onchange="toggleHoleriteSection()" style="width:18px;height:18px;cursor:pointer">
+      </label>
+    </div>
+
+    <!-- Campos básicos -->
+    <div id="inc-basic-fields">
+      <div class="form-group"><label class="form-label" id="inc-amount-label">Valor (R$)</label><input type="number" inputmode="decimal" class="form-input" id="inc-amount" placeholder="0,00" step="0.01" min="0"></div>
+    </div>
+
+    <!-- Holerite (detalhado) -->
+    <div id="inc-holerite-section" style="display:none;background:#fef7f3;border:1.5px solid #fce7f3;border-radius:12px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:#831843;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">📋 Holerite</div>
+      <div class="form-group" style="margin-bottom:10px"><label class="form-label" style="font-size:12px">💰 Salário Bruto</label><input type="number" inputmode="decimal" class="form-input" id="hol-bruto" placeholder="0,00" step="0.01" min="0" oninput="recalcHolerite()"></div>
+      <div style="font-size:11px;font-weight:600;color:#9ca3af;margin:10px 0 6px;text-transform:uppercase;letter-spacing:.5px">— Descontos —</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label style="font-size:11px;color:#6b7280">INSS</label><input type="number" inputmode="decimal" class="form-input" id="hol-inss" placeholder="0,00" step="0.01" min="0" oninput="recalcHolerite()" style="font-size:14px;padding:8px"></div>
+        <div><label style="font-size:11px;color:#6b7280">IRRF</label><input type="number" inputmode="decimal" class="form-input" id="hol-irrf" placeholder="0,00" step="0.01" min="0" oninput="recalcHolerite()" style="font-size:14px;padding:8px"></div>
+        <div><label style="font-size:11px;color:#6b7280">Plano Saúde</label><input type="number" inputmode="decimal" class="form-input" id="hol-plano" placeholder="0,00" step="0.01" min="0" oninput="recalcHolerite()" style="font-size:14px;padding:8px"></div>
+        <div><label style="font-size:11px;color:#6b7280">Co-partic.</label><input type="number" inputmode="decimal" class="form-input" id="hol-copart" placeholder="0,00" step="0.01" min="0" oninput="recalcHolerite()" style="font-size:14px;padding:8px"></div>
+        <div><label style="font-size:11px;color:#6b7280">Consignado</label><input type="number" inputmode="decimal" class="form-input" id="hol-consig" placeholder="0,00" step="0.01" min="0" oninput="recalcHolerite()" style="font-size:14px;padding:8px"></div>
+        <div><label style="font-size:11px;color:#6b7280">Outros</label><input type="number" inputmode="decimal" class="form-input" id="hol-outros" placeholder="0,00" step="0.01" min="0" oninput="recalcHolerite()" style="font-size:14px;padding:8px"></div>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:#d1fae5;border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;font-weight:600;color:#065f46">✅ Líquido a receber</span>
+        <span id="hol-liquido" style="font-size:18px;font-weight:800;color:#059669">R$ 0,00</span>
+      </div>
+    </div>
+
     <div class="form-group"><label class="form-label">Data</label><input type="date" class="form-input" id="inc-date"></div>
-    <div class="form-group"><label class="form-label">Observação (opcional)</label><input type="text" class="form-input" id="inc-note" placeholder="Ex: corrida aeroporto, imóvel Rua X..."></div>
+
+    <!-- Cliente (só comissão) -->
+    <div class="form-group" id="inc-client-group" style="display:none"><label class="form-label">👤 Cliente / Imóvel (opcional)</label><input type="text" class="form-input" id="inc-client" placeholder="Ex: Sr. João — Apto Vila X"></div>
+
+    <!-- Conta bancária + auto-crédito -->
+    <div class="form-group">
+      <label class="form-label">🏦 Conta onde caiu (opcional)</label>
+      <select class="form-select" id="inc-bank-account"><option value="">— Não vincular —</option></select>
+    </div>
+    <div id="inc-autocredit-row" style="display:none;margin-bottom:14px">
+      <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;cursor:pointer">
+        <span style="font-size:12px;color:#065f46">💰 Somar no saldo da conta automaticamente</span>
+        <input type="checkbox" id="inc-autocredit" checked style="width:18px;height:18px;cursor:pointer">
+      </label>
+    </div>
+
+    <div class="form-group"><label class="form-label">📝 Observação (opcional)</label><input type="text" class="form-input" id="inc-note" placeholder="Ex: corrida aeroporto, imóvel Rua X..."></div>
+
     <button class="btn-primary" onclick="addIncome()">Salvar</button>
     <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-renda')">Cancelar</button>
   </div></div>
@@ -247,6 +308,11 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
     <div class="form-group"><label class="form-label">Dia de Vencimento</label><input type="number" class="form-input" id="conta-due" placeholder="Ex: 10" min="1" max="31"></div>
     <div class="form-group"><label class="form-label">Categoria</label>
       <select class="form-select" id="conta-cat"><option>Moradia</option><option>Transporte</option><option>Alimentação</option><option>Saúde</option><option>Educação</option><option>Lazer</option><option>Serviços</option><option>Veículo</option><option>Seguro</option><option>Outros</option></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">🔗 Vincular financiamento (opcional)</label>
+      <select class="form-select" id="conta-fin-link"><option value="">— Sem vínculo —</option></select>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px">Quando marcar como pago, a parcela do financiamento avança automaticamente.</div>
     </div>
     <button class="btn-primary" onclick="saveBill()">Salvar</button>
     <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-conta')">Cancelar</button>
@@ -285,7 +351,7 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
   </div></div>
 </div>
 
-<!-- Custo (Carro / Corretagem) -->
+<!-- Custo (Carro / Corretagem / Variável) -->
 <div class="modal" id="modal-custo">
   <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
     <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:18px">Novo Gasto</h3>
@@ -296,10 +362,30 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
       <button class="type-btn" id="custo-btn-var" onclick="setCustoType('variable')">🛒 Variável</button>
     </div>
     <div class="form-group"><label class="form-label">Categoria</label>
-      <select class="form-select" id="custo-cat"></select>
+      <select class="form-select" id="custo-cat" onchange="onCustoCatChange()"></select>
     </div>
     <div class="form-group"><label class="form-label">Valor (R$)</label><input type="number" inputmode="decimal" class="form-input" id="custo-amount" placeholder="0,00" step="0.01" min="0"></div>
     <div class="form-group"><label class="form-label">Data</label><input type="date" class="form-input" id="custo-date"></div>
+
+    <!-- ⛽ Combustível: campos extras (KM, litros, tanque cheio) -->
+    <div id="custo-fuel-extras" style="display:none;background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:#9a3412;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">⛽ Detalhes do abastecimento</div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label" style="font-size:12px">🛣️ Km do odômetro AGORA</label>
+        <input type="number" inputmode="numeric" class="form-input" id="fuel-odometer" placeholder="Ex: 87420" step="1" min="0" oninput="updateFuelKmL()" style="font-size:18px;font-weight:600">
+        <div id="fuel-odom-hint" style="font-size:11px;color:#9a3412;margin-top:4px"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label" style="font-size:12px">⛽ Litros abastecidos (opcional)</label>
+        <input type="number" inputmode="decimal" class="form-input" id="fuel-liters" placeholder="Ex: 42.5" step="0.01" min="0" oninput="updateFuelKmL()" style="font-size:14px">
+      </div>
+      <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:white;border:1.5px solid #fed7aa;border-radius:10px;cursor:pointer;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:600;color:#9a3412">🅕 Encheu o tanque?</span>
+        <input type="checkbox" id="fuel-tank-full" style="width:18px;height:18px;cursor:pointer">
+      </label>
+      <div id="fuel-kml-preview" style="font-size:12px;color:#9a3412;padding:6px 4px;display:none"></div>
+    </div>
+
     <div class="form-group"><label class="form-label">Observação (opcional)</label><input type="text" class="form-input" id="custo-note" placeholder="Detalhes..."></div>
     <button class="btn-primary" onclick="saveCost()">Salvar</button>
     <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-custo')">Cancelar</button>
@@ -416,14 +502,30 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
   </div></div>
 </div>
 
-<!-- Km -->
+<!-- Km / Odômetro -->
 <div class="modal" id="modal-km">
   <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
-    <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:18px">📏 Registrar Km</h3>
+    <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:6px">🛣️ Registrar Odômetro</h3>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:14px">Use o valor que aparece no painel do carro agora. O sistema calcula automaticamente os km rodados desde a última leitura.</p>
+
     <div class="form-group"><label class="form-label">Data</label><input type="date" class="form-input" id="km-date"></div>
-    <div class="form-group"><label class="form-label">Quilometragem Rodada</label><input type="number" inputmode="decimal" class="form-input" id="km-value" placeholder="Ex: 120" step="1" min="0"></div>
+    <div class="form-group">
+      <label class="form-label">🛣️ Leitura do odômetro (km totais do carro)</label>
+      <input type="number" inputmode="numeric" class="form-input" id="km-odometer" placeholder="Ex: 87420" step="1" min="0" oninput="updateKmPreview()" style="font-size:22px;font-weight:700;text-align:center;letter-spacing:1px">
+      <div id="km-last-hint" style="font-size:11px;color:#9ca3af;margin-top:6px;text-align:center"></div>
+    </div>
+
+    <details style="margin-bottom:14px">
+      <summary style="cursor:pointer;font-size:12px;color:#6b7280;padding:4px 0">⚙️ Modo avançado: registrar km rodados manualmente</summary>
+      <div class="form-group" style="margin-top:8px">
+        <label class="form-label" style="font-size:12px">Km rodados (manual, opcional)</label>
+        <input type="number" inputmode="decimal" class="form-input" id="km-value" placeholder="Ex: 120" step="1" min="0" oninput="updateKmPreview()">
+      </div>
+    </details>
+
     <div id="km-fuel-preview" style="background:#fff7ed;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#92400e"></div>
-    <button class="btn-primary" onclick="saveKm()">Registrar</button>
+
+    <button class="btn-primary" onclick="saveKm()">💾 Registrar</button>
     <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-km')">Cancelar</button>
   </div></div>
 </div>
@@ -481,7 +583,7 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
           maxlength="8" style="font-size:28px;font-weight:800;letter-spacing:8px;text-align:center" inputmode="numeric">
       </div>
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;margin-bottom:14px;font-size:12px;color:#065f46">
-        💡 Depois de criar, mande o <strong>código</strong> e o <strong>PIN</strong> para a Jaqueline pelo WhatsApp. Só isso!
+        💡 Depois de criar, mande o <strong>código</strong> e o <strong>PIN</strong> para seu cônjuge pelo WhatsApp. Só isso!
       </div>
       <button class="btn-primary" id="room-create-btn" onclick="createRoom()">✅ Criar Sala</button>
     </div>
@@ -541,6 +643,12 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
       <button class="btn-secondary" style="width:100%;text-align:center" onclick="closeModal('modal-config');openModal('modal-csv')">📊 Importar Extrato CSV</button>
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
     </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #f3f4f6">
+      <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">🔔 Lembretes</div>
+      <div id="notif-status" style="font-size:12px;color:#6b7280;margin-bottom:8px"></div>
+      <button id="notif-btn" class="btn-secondary" style="width:100%;text-align:center" onclick="toggleNotifications()">🔔 Ativar lembretes diários</button>
+      <div style="font-size:11px;color:#9ca3af;margin-top:6px;line-height:1.4">Lembretes locais às 21h (lançar Uber) e domingo 10h (auditoria). Funciona melhor quando o app está instalado no celular.</div>
+    </div>
     <div style="margin-top:12px">
       <button onclick="confirmClear()" style="width:100%;padding:12px;background:#fee2e2;color:#dc2626;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">🗑️ Apagar Todos os Dados</button>
     </div>
@@ -584,10 +692,22 @@ const AUDIT_CHECKS  = [
   'Conferir dinheiro em espécie',
   'Verificar extratos bancários',
   'Confirmar contas pagas / pendentes',
-  'Registrar km da semana',
+  'Registrar odômetro do carro',
   'Revisar inadimplências / a receber',
   'Atualizar saldos das contas bancárias',
   'Checar dívidas e financiamentos',
+];
+
+// 🏆 Conquistas — 8 essenciais para a jornada da liberdade financeira
+const ACHIEVEMENTS = [
+  {id:'first_grand',  emoji:'🥉', title:'Primeiro Mil', desc:'Quitou R$ 1.000 em dívidas',                  test:db=>totalDebtsPaid(db)>=1000},
+  {id:'patrimonio',   emoji:'🥈', title:'Verde Pela Primeira Vez', desc:'Patrimônio líquido positivo',      test:db=>currentNetWorth(db)>0},
+  {id:'half_imovel',  emoji:'🥇', title:'Meia Casa', desc:'50% do financiamento do imóvel quitado',         test:db=>(db.financings||[]).some(f=>f.type==='imovel'&&((f.currentInstallment||1)/(f.termMonths||1))>=0.5)},
+  {id:'audit_year',   emoji:'💎', title:'Disciplina de Aço', desc:'12 semanas seguidas com auditoria completa', test:db=>longestAuditStreak(db)>=12},
+  {id:'goal_streak',  emoji:'🎯', title:'Maratonista', desc:'Bateu meta mensal Uber 6× seguidas',           test:db=>monthlyGoalStreak(db)>=6},
+  {id:'uber_10k',     emoji:'🚗', title:'10 mil Km', desc:'10.000 km registrados no Uber',                   test:db=>totalKm(db)>=10000},
+  {id:'income_100k',  emoji:'📈', title:'Seis Dígitos', desc:'R$ 100.000 em renda registrada',               test:db=>totalIncome(db)>=100000},
+  {id:'debt_free',    emoji:'🎊', title:'Liberdade!', desc:'Zerou todas as dívidas (sem financiamentos)',    test:db=>db.debts.length===0 && (db.income||[]).length>10},
 ];
 
 function mkDefault() {
@@ -604,6 +724,7 @@ function mkDefault() {
     financings: [],
     assets: [],
     auditLog: [],
+    achievements: [],
     carSetup: { kmPerLiter: 10, fuelPrice: 6.0 }
   };
 }
@@ -623,6 +744,7 @@ function loadDb() {
     if (!Array.isArray(merged.financings)) merged.financings = [];
     if (!Array.isArray(merged.assets)) merged.assets = [];
     if (!Array.isArray(merged.auditLog)) merged.auditLog = [];
+    if (!Array.isArray(merged.achievements)) merged.achievements = [];
     return merged;
   } catch { return mkDefault(); }
 }
@@ -702,6 +824,7 @@ function loadMerge(data) {
   if (!Array.isArray(merged.financings)) merged.financings = [];
   if (!Array.isArray(merged.assets)) merged.assets = [];
   if (!Array.isArray(merged.auditLog)) merged.auditLog = [];
+  if (!Array.isArray(merged.achievements)) merged.achievements = [];
   return merged;
 }
 
@@ -728,6 +851,8 @@ function monthLabel(ym) {
   return ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][parseInt(m)-1]+' '+y;
 }
 function greeting() { const h=new Date().getHours(); return h<12?'Bom dia ☀️':h<18?'Boa tarde 🌤️':'Boa noite 🌙'; }
+function spouseName() { return (db.profile?.spouse||'').trim() || 'Cônjuge'; }
+function spouseShort() { const s=spouseName(); return s.length>12?s.substring(0,10)+'…':s; }
 function incomeInMonth(ym) { return db.income.filter(i=>i.date.startsWith(ym)); }
 function incomeTotal(ym, type) { return incomeInMonth(ym).filter(i=>!type||i.type===type).reduce((s,i)=>s+i.amount,0); }
 function isBillPaid(id, ym) { const b=db.bills.find(b=>b.id===id); return !!(b?.paid?.includes(ym)); }
@@ -739,17 +864,212 @@ function bankTotal() { return db.bankAccounts.reduce((s,b)=>s+b.balance,0); }
 function costsInMonth(ym, type) { return db.costs.filter(c=>c.date.startsWith(ym)&&(!type||c.type===type)); }
 function costsTotal(ym, type) { return costsInMonth(ym,type).reduce((s,c)=>s+c.amount,0); }
 function kmInDay(d) { return db.kmLog.filter(k=>k.date===d).reduce((s,k)=>s+k.km,0); }
-function fuelCostForKm(km) { const {kmPerLiter,fuelPrice}=db.carSetup; return kmPerLiter>0?(km/kmPerLiter)*fuelPrice:0; }
+function fuelCostForKm(km) {
+  const real=realKmPerLiter();
+  const kmL=real||db.carSetup.kmPerLiter;
+  const fuelPrice=db.carSetup.fuelPrice;
+  return kmL>0?(km/kmL)*fuelPrice:0;
+}
+function effectiveKmPerLiter() { return realKmPerLiter()||db.carSetup.kmPerLiter; }
+
+// ============================================================
+// 🏆 ACHIEVEMENTS, STREAKS & TOAST
+// ============================================================
+function flashToast(msg, color) {
+  const existing=document.getElementById('toast-msg');
+  if(existing) existing.remove();
+  const div=document.createElement('div');
+  div.id='toast-msg';
+  div.textContent=msg;
+  div.style.cssText=`position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:${color||'#0f172a'};color:white;padding:12px 20px;border-radius:99px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:300;animation:slideUp .3s ease;max-width:90vw;text-align:center`;
+  document.body.appendChild(div);
+  setTimeout(()=>{div.style.transition='opacity .4s';div.style.opacity='0';setTimeout(()=>div.remove(),400);},2800);
+}
+function totalIncome(d=db) { return (d.income||[]).reduce((s,i)=>s+(i.amount||0),0); }
+function totalKm(d=db) { return (d.kmLog||[]).reduce((s,k)=>s+(k.km||0),0); }
+function totalDebtsPaid(d=db) {
+  // Quanto já foi quitado: contas de dívida marcadas + parcelas pagas de financiamentos
+  let total=0;
+  (d.financings||[]).forEach(f=>{
+    const paid=Math.max(0,(f.currentInstallment||1)-1);
+    const sched=calcAmortization(f);
+    if(paid>0 && sched[paid-1]) total+=(f.financedAmount-sched[paid-1].balance);
+  });
+  return total;
+}
+function currentNetWorth(d=db) {
+  const banks=(d.bankAccounts||[]).reduce((s,b)=>s+(b.balance||0),0);
+  const standalone=(d.assets||[]).reduce((s,a)=>s+(a.value||0),0);
+  const finAssets=(d.financings||[]).reduce((s,f)=>s+(f.assetValue||0),0);
+  const finRem=(d.financings||[]).reduce((s,f)=>s+financingRemaining(f),0);
+  const debts=(d.debts||[]).reduce((s,x)=>s+(x.remaining||0),0);
+  return banks+standalone+finAssets-debts-finRem;
+}
+function longestAuditStreak(d=db) {
+  if(!d.auditLog?.length) return 0;
+  const sorted=[...d.auditLog].sort((a,b)=>a.weekStart.localeCompare(b.weekStart));
+  const completed=sorted.filter(a=>Array.isArray(a.checks) && a.checks.filter(Boolean).length===AUDIT_CHECKS.length);
+  let max=0, cur=0, lastWs=null;
+  completed.forEach(a=>{
+    if(!lastWs) cur=1;
+    else {
+      const diff=Math.round((new Date(a.weekStart)-new Date(lastWs))/(86400000*7));
+      cur=(diff===1)?cur+1:1;
+    }
+    lastWs=a.weekStart;
+    if(cur>max) max=cur;
+  });
+  return max;
+}
+function currentAuditStreak(d=db) {
+  // Streak ATÉ AGORA (semanas completas consecutivas terminando na semana mais recente)
+  if(!d.auditLog?.length) return 0;
+  const sorted=[...d.auditLog].sort((a,b)=>b.weekStart.localeCompare(a.weekStart));
+  let streak=0, expected=getSunday(todayStr());
+  for(const a of sorted) {
+    if(a.weekStart!==expected) {
+      // Se a primeira que falta é a semana atual e ainda não foi feita, considera expectativa anterior
+      if(streak===0 && a.weekStart<expected) { expected=a.weekStart; }
+      else break;
+    }
+    const done=Array.isArray(a.checks)?a.checks.filter(Boolean).length===AUDIT_CHECKS.length:false;
+    if(!done) break;
+    streak++;
+    const dt=new Date(expected+'T12:00:00'); dt.setDate(dt.getDate()-7);
+    expected=dt.toISOString().split('T')[0];
+  }
+  return streak;
+}
+function currentDailyIncomeStreak(d=db) {
+  if(!d.income?.length) return 0;
+  const dates=new Set(d.income.map(i=>i.date));
+  let streak=0, day=new Date();
+  while(true) {
+    const s=day.toISOString().split('T')[0];
+    if(dates.has(s)) { streak++; day.setDate(day.getDate()-1); }
+    else break;
+  }
+  return streak;
+}
+function monthlyGoalStreak(d=db) {
+  const goal=d.goals?.monthly||0;
+  if(goal<=0) return 0;
+  // Por simplicidade: conta meses recentes consecutivos em que renda Uber atingiu meta
+  const months=[...new Set((d.income||[]).map(i=>i.date?.substring(0,7)).filter(Boolean))].sort().reverse();
+  let streak=0;
+  for(const ym of months) {
+    const uberM=(d.income||[]).filter(i=>i.type==='uber' && i.date.startsWith(ym)).reduce((s,i)=>s+i.amount,0);
+    if(uberM>=goal) streak++; else break;
+  }
+  return streak;
+}
+function checkAchievements() {
+  if(!Array.isArray(db.achievements)) db.achievements=[];
+  let newOnes=[];
+  ACHIEVEMENTS.forEach(a=>{
+    if(!db.achievements.includes(a.id) && a.test(db)) {
+      db.achievements.push(a.id);
+      newOnes.push(a);
+    }
+  });
+  if(newOnes.length) {
+    newOnes.forEach((a,idx)=>{
+      setTimeout(()=>flashToast(`${a.emoji} Conquista desbloqueada: ${a.title}!`,'#7c3aed'),idx*1500);
+    });
+  }
+}
+
+// ============================================================
+// 🔔 PWA + NOTIFICAÇÕES LOCAIS
+// ============================================================
+const NOTIF_KEY='financeuber_notif_on';
+function notificationsEnabled() { return localStorage.getItem(NOTIF_KEY)==='1' && Notification.permission==='granted'; }
+function updateNotifUI() {
+  const status=document.getElementById('notif-status');
+  const btn=document.getElementById('notif-btn');
+  if(!status||!btn) return;
+  if(!('Notification' in window)) {
+    status.textContent='⚠️ Este dispositivo não suporta notificações.';
+    btn.disabled=true; btn.style.opacity='.5'; return;
+  }
+  if(Notification.permission==='denied') {
+    status.innerHTML='❌ Notificações bloqueadas. Vá em <strong>Configurações do navegador → Site → Notificações</strong> para liberar.';
+    btn.disabled=true; btn.style.opacity='.5'; return;
+  }
+  if(notificationsEnabled()) {
+    status.innerHTML='✅ <strong>Lembretes ativos</strong>. Vou avisar de noite e nos domingos.';
+    btn.textContent='🔕 Desativar lembretes';
+  } else {
+    status.textContent='Os lembretes ajudam você a manter a rotina financeira em dia.';
+    btn.textContent='🔔 Ativar lembretes diários';
+  }
+}
+async function toggleNotifications() {
+  if(!('Notification' in window)) return alert('Este dispositivo não suporta notificações.');
+  if(notificationsEnabled()) {
+    localStorage.removeItem(NOTIF_KEY);
+    flashToast('🔕 Lembretes desativados');
+    updateNotifUI();
+    return;
+  }
+  let perm=Notification.permission;
+  if(perm==='default') perm=await Notification.requestPermission();
+  if(perm!=='granted') { updateNotifUI(); return alert('Permissão negada. Você pode liberar nas configurações do navegador a qualquer momento.'); }
+  localStorage.setItem(NOTIF_KEY,'1');
+  scheduleNotifications();
+  // Notificação de teste imediata
+  try { new Notification('🔔 Lembretes ativos!', {body:'Você receberá lembretes diários do FinanceUber.',icon:'icon-192.png'}); } catch{}
+  flashToast('✅ Lembretes ativados!','#059669');
+  updateNotifUI();
+}
+let notifTimers=[];
+function scheduleNotifications() {
+  // Limpar timers antigos
+  notifTimers.forEach(t=>clearTimeout(t));
+  notifTimers=[];
+  if(!notificationsEnabled()) return;
+  const now=new Date();
+  // 1. Lembrete diário às 21h: "Lance o Uber"
+  const next21=new Date(now); next21.setHours(21,0,0,0);
+  if(next21<=now) next21.setDate(next21.getDate()+1);
+  notifTimers.push(setTimeout(()=>{
+    const td=todayStr();
+    const hasUber=(db.income||[]).some(i=>i.type==='uber'&&i.date===td);
+    if(!hasUber) try { new Notification('🚗 Quanto fez no Uber hoje?',{body:'Lance a renda do dia para não esquecer.',icon:'icon-192.png',tag:'daily-income'}); } catch{}
+    scheduleNotifications(); // re-agenda
+  }, next21-now));
+  // 2. Domingo 10h: auditoria
+  const nextSunday=new Date(now);
+  const daysToSun=(7-nextSunday.getDay())%7 || 7;
+  nextSunday.setDate(nextSunday.getDate()+(nextSunday.getDay()===0&&nextSunday.getHours()<10?0:daysToSun));
+  nextSunday.setHours(10,0,0,0);
+  if(nextSunday<=now) nextSunday.setDate(nextSunday.getDate()+7);
+  notifTimers.push(setTimeout(()=>{
+    const ws=getSunday(todayStr());
+    const a=getAuditForWeek(ws);
+    const done=Array.isArray(a?.checks)?a.checks.filter(Boolean).length:0;
+    if(done<AUDIT_CHECKS.length) try { new Notification('📋 Hora da auditoria semanal!',{body:`Domingo é dia de revisar as finanças com ${spouseShort()}.`,icon:'icon-192.png',tag:'weekly-audit'}); } catch{}
+    scheduleNotifications();
+  }, nextSunday-now));
+}
+function registerSW() {
+  if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW falhou:',e));
+  }
+}
 function generateCode() { const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
 function generateToken() { const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:12},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
 
 // ── Week helpers ────────────────────────────────────────────
-function getMonday(dateStr) {
+function getSunday(dateStr) {
+  // Domingo = início da semana (auditoria semanal aos domingos)
   const d=new Date((dateStr||todayStr())+'T12:00:00');
-  const day=d.getDay(); // 0=Sun
-  d.setDate(d.getDate()-(day===0?6:day-1));
+  const day=d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  d.setDate(d.getDate()-day);
   return d.toISOString().split('T')[0];
 }
+// Alias legado para não quebrar chamadas antigas
+function getMonday(dateStr) { return getSunday(dateStr); }
 function getWeekEnd(ws) {
   const d=new Date(ws+'T12:00:00'); d.setDate(d.getDate()+6);
   return d.toISOString().split('T')[0];
@@ -784,9 +1104,13 @@ function saveAuditData() {
   const ws=currentAuditWeek;
   const cash=document.getElementById('audit-cash').value.trim();
   const notes=document.getElementById('audit-notes').value.trim();
+  const odoEl=document.getElementById('audit-odometer');
+  const odo=odoEl?(parseFloat(odoEl.value)||0):0;
   let a=db.auditLog.find(a=>a.weekStart===ws);
   if(!a){a={id:uid(),weekStart:ws,cashOnHand:cash,notes,checks:new Array(AUDIT_CHECKS.length).fill(false),savedAt:todayStr()};db.auditLog.push(a);}
   else{a.cashOnHand=cash;a.notes=notes;a.savedAt=todayStr();}
+  if(odo>0) a.odometerKm=odo;
+  checkAchievements();
   saveDb(); renderSection('resumo');
   const btn=document.getElementById('audit-save-btn');
   if(btn){btn.textContent='✅ Salvo!';setTimeout(()=>{if(btn)btn.textContent='💾 Salvar Auditoria';},2000);}
@@ -856,11 +1180,74 @@ function setIncType(t) {
   ['uber','sal','com'].forEach(k => document.getElementById('inc-btn-'+k)?.classList.remove('active'));
   const map = {uber:'inc-btn-uber', salario:'inc-btn-sal', comissao:'inc-btn-com'};
   document.getElementById(map[t])?.classList.add('active');
+  // Toggle holerite + cliente fields
+  const holToggle=document.getElementById('inc-holerite-toggle');
+  const clientGroup=document.getElementById('inc-client-group');
+  if(holToggle) holToggle.style.display=t==='salario'?'block':'none';
+  if(clientGroup) clientGroup.style.display=t==='comissao'?'block':'none';
+  if(t!=='salario') {
+    document.getElementById('inc-holerite-on').checked=false;
+    toggleHoleriteSection();
+  }
+}
+function populateIncomeBankSelect() {
+  const sel=document.getElementById('inc-bank-account');
+  if(!sel) return;
+  const opts=['<option value="">— Não vincular —</option>'].concat(
+    (db.bankAccounts||[]).map(b=>`<option value="${b.id}">🏦 ${b.bank}</option>`)
+  );
+  sel.innerHTML=opts.join('');
+  sel.onchange=()=>{
+    const row=document.getElementById('inc-autocredit-row');
+    if(row) row.style.display=sel.value?'block':'none';
+  };
+  // reset autocredit row
+  const row=document.getElementById('inc-autocredit-row');
+  if(row) row.style.display='none';
+}
+function toggleHoleriteSection() {
+  const on=document.getElementById('inc-holerite-on')?.checked;
+  const sec=document.getElementById('inc-holerite-section');
+  const basic=document.getElementById('inc-basic-fields');
+  const lblEl=document.getElementById('inc-amount-label');
+  if(!sec) return;
+  sec.style.display=on?'block':'none';
+  // Quando holerite ligado, esconde o "Valor" simples — o valor vem do líquido
+  if(basic) basic.style.display=on?'none':'block';
+  if(lblEl) lblEl.textContent=on?'Líquido (calculado)':'Valor (R$)';
+  if(on) recalcHolerite();
+}
+function recalcHolerite() {
+  const g=id=>parseFloat(document.getElementById(id)?.value)||0;
+  const bruto=g('hol-bruto');
+  const tot=g('hol-inss')+g('hol-irrf')+g('hol-plano')+g('hol-copart')+g('hol-consig')+g('hol-outros');
+  const liq=Math.max(0,bruto-tot);
+  const el=document.getElementById('hol-liquido');
+  if(el) el.textContent=fmt(liq);
+  // Auto-preenche o campo de valor principal
+  const amtEl=document.getElementById('inc-amount');
+  if(amtEl) amtEl.value=liq.toFixed(2);
+  return {bruto,tot,liq};
+}
+function resetHoleriteFields() {
+  ['hol-bruto','hol-inss','hol-irrf','hol-plano','hol-copart','hol-consig','hol-outros'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  const cb=document.getElementById('inc-holerite-on'); if(cb) cb.checked=false;
+  const liq=document.getElementById('hol-liquido'); if(liq) liq.textContent=fmt(0);
+  const client=document.getElementById('inc-client'); if(client) client.value='';
+  const auto=document.getElementById('inc-autocredit'); if(auto) auto.checked=true;
+  toggleHoleriteSection();
 }
 function openIncomeModal(type) {
   document.getElementById('inc-amount').value='';
   document.getElementById('inc-date').value=todayStr();
   document.getElementById('inc-note').value='';
+  const spLabel=document.getElementById('inc-btn-sal-label');
+  if(spLabel) spLabel.textContent=spouseShort();
+  // Repopulate bank accounts and reset advanced fields
+  populateIncomeBankSelect();
+  resetHoleriteFields();
   setIncType(type||'uber');
   openModal('modal-renda');
 }
@@ -868,13 +1255,53 @@ function addIncome() {
   const amount=parseFloat(document.getElementById('inc-amount').value);
   const date=document.getElementById('inc-date').value;
   const note=document.getElementById('inc-note').value.trim();
+  const bankAccountId=document.getElementById('inc-bank-account').value||null;
+  const autoCredit=bankAccountId && document.getElementById('inc-autocredit').checked;
   if(!amount||amount<=0) return alert('Digite um valor válido.');
   if(!date) return alert('Selecione a data.');
-  db.income.push({id:uid(),type:incType,amount,date,note});
+  const entry={id:uid(),type:incType,amount,date,note};
+  if(bankAccountId) entry.bankAccountId=bankAccountId;
+  if(autoCredit)    entry.autoCredit=true;
+  // Comissão: nome do cliente
+  if(incType==='comissao') {
+    const cli=document.getElementById('inc-client').value.trim();
+    if(cli) entry.clientName=cli;
+  }
+  // Holerite detalhado
+  const holOn=document.getElementById('inc-holerite-on')?.checked;
+  if(incType==='salario' && holOn) {
+    const g=id=>parseFloat(document.getElementById(id)?.value)||0;
+    const breakdown={
+      bruto:g('hol-bruto'),
+      inss:g('hol-inss'),
+      irrf:g('hol-irrf'),
+      planoSaude:g('hol-plano'),
+      copart:g('hol-copart'),
+      consignado:g('hol-consig'),
+      outrosDescontos:g('hol-outros')
+    };
+    breakdown.totalDescontos=breakdown.inss+breakdown.irrf+breakdown.planoSaude+breakdown.copart+breakdown.consignado+breakdown.outrosDescontos;
+    breakdown.liquido=Math.max(0,breakdown.bruto-breakdown.totalDescontos);
+    if(breakdown.bruto>0) entry.breakdown=breakdown;
+  }
+  db.income.push(entry);
+  // Auto-crédito no saldo bancário
+  if(autoCredit) {
+    const ba=db.bankAccounts.find(b=>b.id===bankAccountId);
+    if(ba) ba.balance=(ba.balance||0)+amount;
+  }
+  // Atualiza achievements/streak silenciosamente
+  checkAchievements();
   saveDb(); closeModal('modal-renda'); renderSection(currentSection);
 }
 function deleteIncome(id) {
   if(!confirm('Remover este lançamento?')) return;
+  // Reverter auto-crédito do saldo se aplicável
+  const inc=db.income.find(i=>i.id===id);
+  if(inc?.autoCredit && inc?.bankAccountId) {
+    const ba=db.bankAccounts.find(b=>b.id===inc.bankAccountId);
+    if(ba) ba.balance=(ba.balance||0)-(inc.amount||0);
+  }
   db.income=db.income.filter(i=>i.id!==id);
   saveDb(); renderSection(currentSection);
 }
@@ -882,15 +1309,30 @@ function deleteIncome(id) {
 // ============================================================
 // BILLS
 // ============================================================
+function populateBillFinSelect(selectedId) {
+  const sel=document.getElementById('conta-fin-link');
+  if(!sel) return;
+  const opts=['<option value="">— Sem vínculo —</option>'].concat(
+    (db.financings||[]).map(f=>`<option value="${f.id}" ${selectedId===f.id?'selected':''}>${({imovel:'🏠',veiculo:'🚗',outro:'📦'})[f.type]||'📦'} ${f.name} (parc. ${f.currentInstallment||1}/${f.termMonths})</option>`)
+  );
+  sel.innerHTML=opts.join('');
+}
 function openBillModal(editId) {
   document.getElementById('conta-edit-id').value=editId||'';
   document.getElementById('conta-title').textContent=editId?'Editar Conta':'Nova Conta';
   if(editId) {
     const b=db.bills.find(b=>b.id===editId);
-    if(b){document.getElementById('conta-name').value=b.name;document.getElementById('conta-amount').value=b.amount;document.getElementById('conta-due').value=b.dueDay;document.getElementById('conta-cat').value=b.category;}
+    if(b){
+      document.getElementById('conta-name').value=b.name;
+      document.getElementById('conta-amount').value=b.amount;
+      document.getElementById('conta-due').value=b.dueDay;
+      document.getElementById('conta-cat').value=b.category;
+      populateBillFinSelect(b.linkedFinancingId);
+    }
   } else {
     ['conta-name','conta-amount','conta-due'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('conta-cat').value='Moradia';
+    populateBillFinSelect();
   }
   openModal('modal-conta');
 }
@@ -900,17 +1342,37 @@ function saveBill() {
   const amount=parseFloat(document.getElementById('conta-amount').value);
   const dueDay=parseInt(document.getElementById('conta-due').value);
   const category=document.getElementById('conta-cat').value;
+  const linkedFinancingId=document.getElementById('conta-fin-link').value||null;
   if(!name) return alert('Digite o nome.');
   if(!amount||amount<=0) return alert('Digite o valor.');
   if(!dueDay||dueDay<1||dueDay>31) return alert('Dia inválido.');
-  if(editId){const b=db.bills.find(b=>b.id===editId);if(b)Object.assign(b,{name,amount,dueDay,category});}
-  else db.bills.push({id:uid(),name,amount,dueDay,category,paid:[]});
+  const obj={name,amount,dueDay,category};
+  if(linkedFinancingId) obj.linkedFinancingId=linkedFinancingId; else obj.linkedFinancingId=null;
+  if(editId){const b=db.bills.find(b=>b.id===editId);if(b)Object.assign(b,obj);}
+  else db.bills.push({id:uid(),...obj,paid:[]});
   saveDb(); closeModal('modal-conta'); renderSection(currentSection);
 }
 function togglePaid(billId, ym) {
   const b=db.bills.find(b=>b.id===billId); if(!b) return;
   if(!b.paid) b.paid=[];
-  if(b.paid.includes(ym)) b.paid=b.paid.filter(p=>p!==ym); else b.paid.push(ym);
+  const wasPaid=b.paid.includes(ym);
+  if(wasPaid) b.paid=b.paid.filter(p=>p!==ym);
+  else b.paid.push(ym);
+  // Auto-incrementa/decrementa parcela do financiamento vinculado
+  if(b.linkedFinancingId) {
+    const f=db.financings.find(x=>x.id===b.linkedFinancingId);
+    if(f) {
+      const cur=f.currentInstallment||1;
+      if(!wasPaid) {
+        if(cur<f.termMonths) f.currentInstallment=cur+1;
+        flashToast(`✅ Parcela ${cur}/${f.termMonths} do ${f.name} quitada!`);
+      } else {
+        if(cur>1) f.currentInstallment=cur-1;
+        flashToast(`↩️ Parcela revertida em ${f.name}`);
+      }
+    }
+  }
+  checkAchievements();
   saveDb(); renderSection(currentSection);
 }
 function deleteBill(id) {
@@ -995,12 +1457,66 @@ function setCustoType(t) {
   document.getElementById('custo-btn-var').classList.toggle('active',t==='variable');
   const sel=document.getElementById('custo-cat');
   sel.innerHTML=(CAT_MAP[t]||CAR_CATS).map(c=>`<option>${c}</option>`).join('');
+  onCustoCatChange();
+}
+function onCustoCatChange() {
+  const cat=document.getElementById('custo-cat').value;
+  const isFuel=(custoType==='car' && cat==='Combustível');
+  const extras=document.getElementById('custo-fuel-extras');
+  if(extras) extras.style.display=isFuel?'block':'none';
+  if(isFuel) updateFuelOdometerHint();
+}
+function lastOdometerReading() {
+  // Procura a última leitura de odômetro em costs[].odometerKm OU kmLog[].odometerKm
+  const fuelOdos=(db.costs||[]).filter(c=>c.odometerKm).map(c=>({date:c.date,km:c.odometerKm}));
+  const kmOdos =(db.kmLog||[]).filter(k=>k.odometerKm).map(k=>({date:k.date,km:k.odometerKm}));
+  const auditOdos=(db.auditLog||[]).filter(a=>a.odometerKm).map(a=>({date:a.weekStart,km:a.odometerKm}));
+  const all=[...fuelOdos,...kmOdos,...auditOdos].sort((a,b)=>b.date.localeCompare(a.date));
+  return all[0]||null;
+}
+function updateFuelOdometerHint() {
+  const hint=document.getElementById('fuel-odom-hint');
+  const last=lastOdometerReading();
+  if(hint) hint.textContent=last?`Última leitura: ${last.km.toLocaleString('pt-BR')} km (${fmtDate(last.date)})`:'Nenhuma leitura anterior — registre seu primeiro odômetro.';
+}
+function updateFuelKmL() {
+  const odo=parseFloat(document.getElementById('fuel-odometer').value)||0;
+  const liters=parseFloat(document.getElementById('fuel-liters').value)||0;
+  const last=lastOdometerReading();
+  const preview=document.getElementById('fuel-kml-preview');
+  if(!preview) return;
+  if(odo>0 && liters>0 && last && last.km>0 && odo>last.km) {
+    const dist=odo-last.km;
+    const kmL=dist/liters;
+    preview.style.display='block';
+    preview.innerHTML=`📊 Consumo neste período: <strong>${kmL.toFixed(2)} km/L</strong> (${dist} km ÷ ${liters} L)`;
+  } else preview.style.display='none';
 }
 function openCustoModal(type, editId) {
   document.getElementById('custo-edit-id').value=editId||'';
   setCustoType(type||'car');
-  if(editId){const c=db.costs.find(c=>c.id===editId);if(c){setCustoType(c.type);document.getElementById('custo-cat').value=c.category;document.getElementById('custo-amount').value=c.amount;document.getElementById('custo-date').value=c.date;document.getElementById('custo-note').value=c.note||'';}}
-  else{document.getElementById('custo-amount').value='';document.getElementById('custo-date').value=todayStr();document.getElementById('custo-note').value='';}
+  // Reset fuel fields
+  ['fuel-odometer','fuel-liters'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const tf=document.getElementById('fuel-tank-full');if(tf)tf.checked=false;
+  const prev=document.getElementById('fuel-kml-preview');if(prev)prev.style.display='none';
+  if(editId){
+    const c=db.costs.find(c=>c.id===editId);
+    if(c){
+      setCustoType(c.type);
+      document.getElementById('custo-cat').value=c.category;
+      document.getElementById('custo-amount').value=c.amount;
+      document.getElementById('custo-date').value=c.date;
+      document.getElementById('custo-note').value=c.note||'';
+      if(c.odometerKm) document.getElementById('fuel-odometer').value=c.odometerKm;
+      if(c.liters)     document.getElementById('fuel-liters').value=c.liters;
+      if(c.tankFull)   document.getElementById('fuel-tank-full').checked=true;
+      onCustoCatChange();
+    }
+  } else {
+    document.getElementById('custo-amount').value='';
+    document.getElementById('custo-date').value=todayStr();
+    document.getElementById('custo-note').value='';
+  }
   openModal('modal-custo');
 }
 function saveCost() {
@@ -1011,9 +1527,31 @@ function saveCost() {
   const note=document.getElementById('custo-note').value.trim();
   if(!amount||amount<=0) return alert('Digite o valor.');
   if(!date) return alert('Selecione a data.');
-  if(editId){const c=db.costs.find(c=>c.id===editId);if(c)Object.assign(c,{type:custoType,category,amount,date,note});}
-  else db.costs.push({id:uid(),type:custoType,category,amount,date,note});
+  const obj={type:custoType,category,amount,date,note};
+  // Combustível: campos extras
+  if(custoType==='car' && category==='Combustível') {
+    const odo=parseFloat(document.getElementById('fuel-odometer').value)||0;
+    const lit=parseFloat(document.getElementById('fuel-liters').value)||0;
+    const tf=document.getElementById('fuel-tank-full').checked;
+    if(odo>0) obj.odometerKm=odo;
+    if(lit>0) obj.liters=lit;
+    if(tf)    obj.tankFull=true;
+  }
+  if(editId){const c=db.costs.find(c=>c.id===editId);if(c)Object.assign(c,obj);}
+  else db.costs.push({id:uid(),...obj});
+  checkAchievements();
   saveDb(); closeModal('modal-custo'); renderSection(currentSection);
+}
+// Consumo real médio entre dois tanques cheios consecutivos
+function realKmPerLiter() {
+  const fuels=(db.costs||[]).filter(c=>c.type==='car'&&c.category==='Combustível'&&c.odometerKm&&c.tankFull&&c.liters>0).sort((a,b)=>a.odometerKm-b.odometerKm);
+  if(fuels.length<2) return null;
+  let totalDist=0, totalLit=0;
+  for(let i=1;i<fuels.length;i++){
+    const dist=fuels[i].odometerKm-fuels[i-1].odometerKm;
+    if(dist>0) { totalDist+=dist; totalLit+=fuels[i].liters; }
+  }
+  return totalLit>0?totalDist/totalLit:null;
 }
 function deleteCost(id) {
   if(!confirm('Remover este gasto?')) return;
@@ -1329,7 +1867,7 @@ function parseCsvContent(text) {
 }
 function csvTypeOptions(row) {
   const opts=[
-    ['skip','— Ignorar'],['inc_uber','💰 Renda: Uber'],['inc_sal','💰 Renda: Jaqueline'],['inc_com','💰 Renda: Comissão'],
+    ['skip','— Ignorar'],['inc_uber','💰 Renda: Uber'],['inc_sal','💰 Renda: '+spouseName()],['inc_com','💰 Renda: Comissão'],
     ['var_Alimentação','🛒 Alimentação'],['var_Lazer','🛒 Lazer'],['var_Saúde','🛒 Saúde'],
     ['var_Vestuário','🛒 Vestuário'],['var_Beleza','🛒 Beleza'],['var_Educação','🛒 Educação'],
     ['var_Transporte','🛒 Transporte'],['var_Outros','🛒 Outros'],
@@ -1401,26 +1939,46 @@ function importCsvRows() {
 // ============================================================
 function openKmModal() {
   document.getElementById('km-date').value=todayStr();
-  const existing=kmInDay(todayStr());
-  document.getElementById('km-value').value=existing||'';
+  const todayEntry=(db.kmLog||[]).find(k=>k.date===todayStr());
+  document.getElementById('km-odometer').value=todayEntry?.odometerKm||'';
+  document.getElementById('km-value').value=todayEntry?.km||'';
+  // hint
+  const last=lastOdometerReading();
+  const hint=document.getElementById('km-last-hint');
+  if(hint) hint.textContent=last?`Última leitura: ${last.km.toLocaleString('pt-BR')} km em ${fmtDate(last.date)}`:'Nenhuma leitura anterior — esta será a primeira.';
   updateKmPreview();
   openModal('modal-km');
 }
 function updateKmPreview() {
-  const km=parseFloat(document.getElementById('km-value').value)||0;
+  const odo=parseFloat(document.getElementById('km-odometer').value)||0;
+  let km=parseFloat(document.getElementById('km-value').value)||0;
+  const last=lastOdometerReading();
+  // Auto-calcula km rodados a partir do odômetro
+  if(odo>0 && !km && last && odo>last.km) km=odo-last.km;
   const fuel=fuelCostForKm(km);
   const el=document.getElementById('km-fuel-preview');
-  if(km>0) el.textContent=`⛽ Estimativa de combustível: ${fmt(fuel)} (${km}km ÷ ${db.carSetup.kmPerLiter}km/L × R$${db.carSetup.fuelPrice}/L)`;
-  else el.textContent='Digite os km para ver estimativa de combustível.';
+  const kmL=effectiveKmPerLiter();
+  const kmLLabel=realKmPerLiter()?` (real ${kmL.toFixed(2)}km/L)`:` (config ${kmL}km/L)`;
+  if(km>0) el.textContent=`⛽ Estimativa: ${fmt(fuel)} para ${km} km${kmLLabel} × R$ ${db.carSetup.fuelPrice}/L`;
+  else if(odo>0) el.textContent=`Leitura: ${odo.toLocaleString('pt-BR')} km. Sem leitura anterior — não é possível calcular consumo ainda.`;
+  else el.textContent='Digite a leitura do odômetro para registrar.';
 }
-document.addEventListener('input', e => { if(e.target.id==='km-value') updateKmPreview(); });
 function saveKm() {
   const date=document.getElementById('km-date').value;
-  const km=parseFloat(document.getElementById('km-value').value);
+  const odo=parseFloat(document.getElementById('km-odometer').value)||0;
+  let km=parseFloat(document.getElementById('km-value').value)||0;
   if(!date) return alert('Selecione a data.');
-  if(!km||km<=0) return alert('Digite os km.');
+  if(!odo && !km) return alert('Digite a leitura do odômetro ou os km rodados.');
+  // Auto-calcula km rodados a partir do odômetro
+  if(odo>0 && !km) {
+    const last=lastOdometerReading();
+    if(last && odo>last.km) km=odo-last.km;
+  }
   db.kmLog=db.kmLog.filter(k=>k.date!==date);
-  db.kmLog.push({id:uid(),date,km});
+  const entry={id:uid(),date,km:km||0};
+  if(odo>0) entry.odometerKm=odo;
+  db.kmLog.push(entry);
+  checkAchievements();
   saveDb(); closeModal('modal-km'); renderSection(currentSection);
 }
 
@@ -1464,6 +2022,7 @@ function saveGoals() {
 function openConfigModal() {
   document.getElementById('cfg-name').value=db.profile.name||'';
   document.getElementById('cfg-spouse').value=db.profile.spouse||'';
+  updateNotifUI();
   const info=document.getElementById('cfg-room-info');
   const conn=document.getElementById('cfg-room-connect');
   if(roomCode){
@@ -1512,7 +2071,7 @@ function copyCurrentRoomCode() {
   const msg = 'Código da sala: '+roomCode+'\nPIN de acesso: '+pin+'\n\nAcesse fin.marcotulio.pro → Sala Familiar → Entrar';
   navigator.clipboard?.writeText(msg)
     .then(()=>alert('✅ Copiado! Cole no WhatsApp:\n\n'+msg))
-    .catch(()=>alert('Copie e envie para a Jaqueline:\n\n'+msg));
+    .catch(()=>alert('Copie e envie para seu cônjuge:\n\n'+msg));
 }
 function roomSetupError(msg) {
   if(!msg) return '';
@@ -1540,7 +2099,7 @@ async function createRoom() {
     localStorage.setItem(ROOM_KEY,code); localStorage.setItem(ROOM_TOKEN_KEY,pin);
     subscribeToRoom(code); updateRoomBadge(); setSyncStatus('ok');
     closeModal('modal-room');
-    alert('Sala criada! ✅\n\nEnvie para a Jaqueline pelo WhatsApp:\n\n🏠 Código: '+code+'\n🔑 PIN: '+pin+'\n\nEla entra em: fin.marcotulio.pro → ⚙️ → Conectar Sala → Entrar');
+    alert('Sala criada! ✅\n\nEnvie para seu cônjuge pelo WhatsApp:\n\n🏠 Código: '+code+'\n🔑 PIN: '+pin+'\n\nEle(a) entra em: ⚙️ → Conectar Sala → Entrar');
   } catch(e) { alert('Erro ao criar sala:\n\n'+(e.message||'Tente novamente.')); setSyncStatus('error'); }
   btn.textContent='✅ Criar Sala'; btn.disabled=false;
 }
@@ -1649,6 +2208,160 @@ function renderDashboard() {
   const upEl=document.getElementById('dash-upcoming');
   if(!upcoming.length) upEl.innerHTML='<div class="empty-state" style="padding:12px 0"><div style="font-size:28px">🎉</div><div style="font-size:13px;margin-top:4px">Sem contas próximas!</div></div>';
   else upEl.innerHTML=upcoming.map(b=>`<div class="list-row"><div style="flex:1"><div style="font-size:14px;font-weight:500;color:#111827">${b.name}</div><div style="font-size:12px;color:#9ca3af">${b.diff===0?'Vence hoje!':b.diff===1?'Vence amanhã':'Vence em '+b.diff+' dias'}</div></div><div style="font-weight:600;color:${b.diff<=2?'#dc2626':'#374151'}">${fmt(b.amount)}</div></div>`).join('');
+
+  // ── Sugestões contextuais ────────────────────────────
+  renderDashboardSuggestions();
+  // ── Streaks ──────────────────────────────────────────
+  renderDashboardStreaks();
+  // ── Saúde do Carro ───────────────────────────────────
+  renderDashboardCarHealth();
+  // ── Conquistas ───────────────────────────────────────
+  renderDashboardAchievements();
+}
+
+function renderDashboardSuggestions() {
+  const el=document.getElementById('dash-suggestions'); if(!el) return;
+  const now=new Date();
+  const hour=now.getHours();
+  const day=now.getDay(); // 0=Dom
+  const td=todayStr();
+  const ym=td.substring(0,7);
+  const sugs=[];
+
+  // 1. Domingo → Auditoria
+  if(day===0) {
+    const ws=getSunday(td);
+    const a=getAuditForWeek(ws);
+    const done=Array.isArray(a?.checks)?a.checks.filter(Boolean).length:0;
+    if(done<AUDIT_CHECKS.length) sugs.push({emoji:'📋',text:`Hoje é domingo — hora da <strong>auditoria semanal</strong> com ${spouseShort()}`,action:`switchSection('resumo');switchSubTab('resumo','auditoria')`,bg:'#fef3c7',color:'#92400e'});
+  }
+  // 2. Final de semana cedo → odômetro
+  if((day===0||day===6)&&hour<14) {
+    const last=lastOdometerReading();
+    const updatedToday=last?.date===td;
+    if(!updatedToday) sugs.push({emoji:'🛣️',text:'Que tal anotar o <strong>odômetro do carro</strong> agora? Ele também é patrimônio.',action:'openKmModal()',bg:'#e0f2fe',color:'#0369a1'});
+  }
+  // 3. Noite (>18h) e não lançou renda hoje
+  if(hour>=18) {
+    const hasIncome=(db.income||[]).some(i=>i.date===td);
+    if(!hasIncome) sugs.push({emoji:'🚗',text:'Já fez Uber hoje? <strong>Lance a renda</strong> antes de dormir.',action:'openIncomeModal("uber")',bg:'#d1fae5',color:'#065f46'});
+  }
+  // 4. Dia 5+ do mês e não lançou salário do cônjuge
+  const dayOfMonth=now.getDate();
+  if(dayOfMonth>=5 && dayOfMonth<=10) {
+    const hasSalary=(db.income||[]).some(i=>i.type==='salario'&&i.date.startsWith(ym));
+    if(!hasSalary && db.profile?.spouse) sugs.push({emoji:'🧾',text:`Holerite do(a) <strong>${spouseShort()}</strong> deste mês — já lançou?`,action:'openIncomeModal("salario")',bg:'#fce7f3',color:'#831843'});
+  }
+  // 5. 5+ dias sem combustível
+  const fuelEntries=(db.costs||[]).filter(c=>c.type==='car'&&c.category==='Combustível').sort((a,b)=>b.date.localeCompare(a.date));
+  if(fuelEntries.length) {
+    const last=new Date(fuelEntries[0].date+'T12:00:00');
+    const diffDays=Math.floor((now-last)/86400000);
+    if(diffDays>=5 && (db.income||[]).some(i=>i.type==='uber'&&i.date>=fuelEntries[0].date)) {
+      sugs.push({emoji:'⛽',text:`Já abasteceu? Último combustível foi há <strong>${diffDays} dias</strong>.`,action:'openCustoModal("car")',bg:'#fff7ed',color:'#9a3412'});
+    }
+  }
+
+  if(!sugs.length) { el.innerHTML=''; return; }
+  el.innerHTML=`<div class="card" style="background:linear-gradient(135deg,#fafafa,#fff);border:1.5px dashed #d4d4d8">
+    <div style="font-size:12px;font-weight:600;color:#71717a;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">💡 Sugestões para você</div>
+    ${sugs.slice(0,3).map(s=>`<div onclick="${s.action}" style="display:flex;align-items:center;gap:10px;padding:10px;background:${s.bg};border-radius:10px;cursor:pointer;margin-bottom:6px">
+      <div style="font-size:22px;flex-shrink:0">${s.emoji}</div>
+      <div style="flex:1;font-size:13px;color:${s.color};line-height:1.4">${s.text}</div>
+      <div style="font-size:18px;color:${s.color};opacity:.5">›</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderDashboardStreaks() {
+  const el=document.getElementById('dash-streaks'); if(!el) return;
+  const incomeStreak=currentDailyIncomeStreak();
+  const auditStreak=currentAuditStreak();
+  const goalStreak=monthlyGoalStreak();
+  // Só renderiza se houver algum streak > 0
+  if(incomeStreak<=0 && auditStreak<=0 && goalStreak<=0) { el.innerHTML=''; return; }
+  const cards=[];
+  if(incomeStreak>0) cards.push({emoji:'🔥',num:incomeStreak,label:'dia'+(incomeStreak>1?'s':'')+' lançando renda',color:'#ea580c',bg:'#fff7ed'});
+  if(auditStreak>0)  cards.push({emoji:'📋',num:auditStreak,label:'semana'+(auditStreak>1?'s':'')+' de auditoria',color:'#6366f1',bg:'#eef2ff'});
+  if(goalStreak>0)   cards.push({emoji:'🎯',num:goalStreak,label:'m'+(goalStreak>1?'eses':'ês')+' batendo meta',color:'#059669',bg:'#d1fae5'});
+  el.innerHTML=`<div class="card">
+    <div style="font-size:12px;font-weight:600;color:#71717a;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">🔥 Sequências</div>
+    <div style="display:grid;grid-template-columns:repeat(${cards.length},1fr);gap:8px">
+      ${cards.map(c=>`<div style="background:${c.bg};border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:22px">${c.emoji}</div>
+        <div style="font-size:24px;font-weight:800;color:${c.color};line-height:1">${c.num}</div>
+        <div style="font-size:10px;color:${c.color};margin-top:2px">${c.label}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderDashboardCarHealth() {
+  const el=document.getElementById('dash-car-health'); if(!el) return;
+  const last=lastOdometerReading();
+  const kmL=realKmPerLiter();
+  const veicFin=(db.financings||[]).find(f=>f.type==='veiculo');
+  const veicAsset=(db.assets||[]).find(a=>a.type==='veiculo');
+  const carName=veicFin?.name||veicAsset?.name||null;
+  if(!last && !kmL && !carName) { el.innerHTML=''; return; }
+  // Próxima troca de óleo (a cada 10.000 km, simples)
+  const fuels=(db.costs||[]).filter(c=>c.type==='car'&&c.category==='Manutenção').sort((a,b)=>b.date.localeCompare(a.date));
+  const oilCandidate=fuels.find(c=>/oleo|óleo|troca de oleo|troca de óleo/i.test((c.note||'')+' '+c.category));
+  let nextOilKm=null;
+  if(oilCandidate?.odometerKm && last?.km) nextOilKm=Math.max(0,oilCandidate.odometerKm+10000-last.km);
+
+  el.innerHTML=`<div class="card" style="background:linear-gradient(135deg,#1e3a5f,#0f172a);color:white">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-weight:600;font-size:13px">🚗 ${carName||'Saúde do Carro'}</div>
+      ${veicFin?`<span style="font-size:10px;background:rgba(255,255,255,.15);padding:2px 8px;border-radius:99px">Financiado</span>`:veicAsset?`<span style="font-size:10px;background:rgba(255,255,255,.15);padding:2px 8px;border-radius:99px">Quitado</span>`:''}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
+        <div style="font-size:10px;opacity:.7">🛣️ Odômetro</div>
+        <div style="font-size:18px;font-weight:700;margin-top:2px">${last?last.km.toLocaleString('pt-BR')+' km':'—'}</div>
+        ${last?`<div style="font-size:10px;opacity:.6;margin-top:1px">${fmtDate(last.date)}</div>`:''}
+      </div>
+      <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
+        <div style="font-size:10px;opacity:.7">⛽ Consumo</div>
+        <div style="font-size:18px;font-weight:700;margin-top:2px">${kmL?kmL.toFixed(1)+' km/L':db.carSetup.kmPerLiter+' km/L'}</div>
+        <div style="font-size:10px;opacity:.6;margin-top:1px">${kmL?'real':'estimado'}</div>
+      </div>
+      ${veicFin?`<div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
+        <div style="font-size:10px;opacity:.7">💵 Valor de mercado</div>
+        <div style="font-size:16px;font-weight:700;margin-top:2px">${fmt(veicFin.assetValue||0)}</div>
+        <div style="font-size:10px;opacity:.6;margin-top:1px">Parc. ${veicFin.currentInstallment||1}/${veicFin.termMonths}</div>
+      </div>`:''}
+      ${nextOilKm!==null?`<div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
+        <div style="font-size:10px;opacity:.7">🛢️ Próxima troca de óleo</div>
+        <div style="font-size:18px;font-weight:700;margin-top:2px">${nextOilKm} km</div>
+        <div style="font-size:10px;opacity:.6;margin-top:1px">a cada 10k km</div>
+      </div>`:''}
+    </div>
+    <button onclick="openKmModal()" style="width:100%;margin-top:10px;padding:8px;background:rgba(255,255,255,.15);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">🛣️ Atualizar odômetro</button>
+  </div>`;
+}
+
+function renderDashboardAchievements() {
+  const el=document.getElementById('dash-achievements'); if(!el) return;
+  const unlocked=db.achievements||[];
+  // Só mostra se tem alguma conquista OU se tem ao menos 5 lançamentos (mostra "próxima")
+  const hasAny=unlocked.length>0;
+  if(!hasAny && (db.income||[]).length<5) { el.innerHTML=''; return; }
+  const tiles=ACHIEVEMENTS.map(a=>{
+    const isUnlocked=unlocked.includes(a.id);
+    return `<div style="background:${isUnlocked?'linear-gradient(135deg,#a78bfa,#7c3aed)':'#f3f4f6'};color:${isUnlocked?'white':'#9ca3af'};border-radius:12px;padding:10px;text-align:center;${isUnlocked?'box-shadow:0 4px 12px rgba(124,58,237,.3)':''}">
+      <div style="font-size:28px;${isUnlocked?'':'filter:grayscale(1);opacity:.5'}">${a.emoji}</div>
+      <div style="font-size:10px;font-weight:700;margin-top:4px;line-height:1.2">${a.title}</div>
+      <div style="font-size:9px;opacity:.7;margin-top:2px;line-height:1.2">${a.desc}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:.5px">🏆 Conquistas</div>
+      <span style="font-size:11px;color:#7c3aed;font-weight:700">${unlocked.length}/${ACHIEVEMENTS.length}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">${tiles}</div>
+  </div>`;
 }
 
 function renderRenda() {
@@ -1660,8 +2373,15 @@ function renderRenda() {
     const entries=incomeInMonth(ym).sort((a,b)=>b.date.localeCompare(a.date));
     const incIcons={uber:'🚗',salario:'👩',comissao:'🤝'};
     const incColors={uber:'#d1fae5',salario:'#fce7f3',comissao:'#dbeafe'};
-    const incLabels={uber:'Uber',salario:'Jaqueline',comissao:'Comissão'};
-    subContent=entries.length?entries.map(e=>`<div class="list-row"><div class="icon-circle" style="background:${incColors[e.type]||'#f3f4f6'}">${incIcons[e.type]||'💰'}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#111827">${incLabels[e.type]||e.type}${e.note?': '+e.note:''}</div><div style="font-size:12px;color:#9ca3af">${fmtDate(e.date)}</div></div><div style="text-align:right"><div style="font-weight:700;color:#059669">${fmt(e.amount)}</div><button onclick="deleteIncome('${e.id}')" style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:0">remover</button></div></div>`).join('')
+    const incLabels={uber:'Uber',salario:spouseName(),comissao:'Comissão'};
+    subContent=entries.length?entries.map(e=>{
+      const ba=e.bankAccountId?db.bankAccounts.find(b=>b.id===e.bankAccountId):null;
+      const bankBadge=ba?` <span style="font-size:10px;background:${ba.color}22;color:#374151;padding:1px 6px;border-radius:99px;margin-left:4px">→ ${ba.bank}</span>`:'';
+      const holBadge=e.breakdown?` <span style="font-size:10px;background:#fce7f3;color:#831843;padding:1px 6px;border-radius:99px">📋 Holerite</span>`:'';
+      const clientLabel=e.clientName?` — 👤 ${e.clientName}`:'';
+      const noteLabel=e.note?': '+e.note:'';
+      return `<div class="list-row"><div class="icon-circle" style="background:${incColors[e.type]||'#f3f4f6'}">${incIcons[e.type]||'💰'}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#111827">${incLabels[e.type]||e.type}${clientLabel}${noteLabel}${bankBadge}${holBadge}</div><div style="font-size:12px;color:#9ca3af">${fmtDate(e.date)}${e.breakdown?` · Bruto ${fmt(e.breakdown.bruto)}`:''}</div></div><div style="text-align:right"><div style="font-weight:700;color:#059669">${fmt(e.amount)}</div><button onclick="deleteIncome('${e.id}')" style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:0">remover</button></div></div>`;
+    }).join('')
     :'<div class="empty-state"><div style="font-size:36px">💸</div><div style="font-size:14px;font-weight:500;margin-top:8px">Nenhum lançamento</div><div style="font-size:13px">Toque em + para registrar</div></div>';
   } else {
     const statusColor={pending:'#f59e0b',received:'#10b981',lost:'#9ca3af'};
@@ -1675,7 +2395,7 @@ function renderRenda() {
     <div class="month-nav"><button onclick="changeMonth(-1)">‹</button><div style="flex:1;text-align:center;font-weight:600;color:#111827">${monthLabel(ym)}</div><button onclick="changeMonth(1)">›</button></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div class="card" style="margin-bottom:0;background:#d1fae5"><div style="font-size:11px;color:#065f46;font-weight:500">🚗 Uber</div><div style="font-size:20px;font-weight:700;color:#059669;margin-top:4px">${fmt(uberT)}</div></div>
-      <div class="card" style="margin-bottom:0;background:#fce7f3"><div style="font-size:11px;color:#831843;font-weight:500">👩 Jaqueline</div><div style="font-size:20px;font-weight:700;color:#be185d;margin-top:4px">${fmt(salT)}</div></div>
+      <div class="card" style="margin-bottom:0;background:#fce7f3"><div style="font-size:11px;color:#831843;font-weight:500">👩 ${spouseShort()}</div><div style="font-size:20px;font-weight:700;color:#be185d;margin-top:4px">${fmt(salT)}</div></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
       <div class="card" style="margin-bottom:0;background:#dbeafe"><div style="font-size:11px;color:#1e3a5f;font-weight:500">🤝 Comissões</div><div style="font-size:20px;font-weight:700;color:#2563eb;margin-top:4px">${fmt(comT)}</div></div>
@@ -1697,14 +2417,22 @@ function renderGastos() {
   if(subTab.gastos==='contas') {
     subContent=db.bills.length?[...db.bills].sort((a,b)=>a.dueDay-b.dueDay).map(b=>{
       const paid=isBillPaid(b.id,ym);
-      return `<div class="list-row" style="opacity:${paid?.6:1}"><div class="check-toggle ${paid?'checked':''}" onclick="togglePaid('${b.id}','${ym}')">${paid?'✓':''}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#111827;text-decoration:${paid?'line-through':'none'}">${b.name}</div><div style="font-size:12px;color:#9ca3af">Dia ${b.dueDay} · ${b.category}</div></div><div style="display:flex;align-items:center;gap:6px"><div style="text-align:right"><div style="font-weight:600;color:${paid?'#059669':'#374151'}">${fmt(b.amount)}</div><div style="font-size:11px;color:${paid?'#059669':'#f59e0b'}">${paid?'Pago':'Pendente'}</div></div><button onclick="openBillModal('${b.id}')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px">✏️</button><button onclick="deleteBill('${b.id}')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px">🗑️</button></div></div>`;
+      const f=b.linkedFinancingId?db.financings.find(x=>x.id===b.linkedFinancingId):null;
+      const linkBadge=f?` <span style="font-size:10px;background:#e0f2fe;color:#0369a1;padding:1px 6px;border-radius:99px">🔗 ${f.name}</span>`:'';
+      return `<div class="list-row" style="opacity:${paid?.6:1}"><div class="check-toggle ${paid?'checked':''}" onclick="togglePaid('${b.id}','${ym}')">${paid?'✓':''}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#111827;text-decoration:${paid?'line-through':'none'}">${b.name}${linkBadge}</div><div style="font-size:12px;color:#9ca3af">Dia ${b.dueDay} · ${b.category}</div></div><div style="display:flex;align-items:center;gap:6px"><div style="text-align:right"><div style="font-weight:600;color:${paid?'#059669':'#374151'}">${fmt(b.amount)}</div><div style="font-size:11px;color:${paid?'#059669':'#f59e0b'}">${paid?'Pago':'Pendente'}</div></div><button onclick="openBillModal('${b.id}')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px">✏️</button><button onclick="deleteBill('${b.id}')" style="background:none;border:none;cursor:pointer;font-size:15px;padding:4px">🗑️</button></div></div>`;
     }).join('')
     :'<div class="empty-state"><div style="font-size:36px">📋</div><div style="font-size:14px;font-weight:500;margin-top:8px">Sem contas</div><div style="font-size:13px">Toque em + para adicionar</div></div>';
   } else if(subTab.gastos==='carro') {
     const entries=costsInMonth(ym,'car').sort((a,b)=>b.date.localeCompare(a.date));
     const kmMes=db.kmLog.filter(k=>k.date.startsWith(ym)).reduce((s,k)=>s+k.km,0);
     const setup=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:12px;color:#6b7280">Km este mês</div><div style="font-size:18px;font-weight:700;color:#374151">${kmMes} km</div></div><button onclick="openCarSetupModal()" style="background:#f3f4f6;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;color:#374151">⚙️ ${db.carSetup.kmPerLiter}km/L · R$${db.carSetup.fuelPrice}/L</button></div>`;
-    subContent=setup+(entries.length?entries.map(c=>`<div class="list-row"><div class="icon-circle" style="background:#fff7ed">⛽</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#111827">${c.category}${c.note?' — '+c.note:''}</div><div style="font-size:12px;color:#9ca3af">${fmtDate(c.date)}</div></div><div style="text-align:right"><div style="font-weight:600;color:#374151">${fmt(c.amount)}</div><button onclick="openCustoModal('car','${c.id}')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0">✏️</button> <button onclick="deleteCost('${c.id}')" style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:0">✕</button></div></div>`).join('')
+    subContent=setup+(entries.length?entries.map(c=>{
+      const odomBadge=c.odometerKm?` <span style="font-size:10px;background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:99px">🛣️ ${c.odometerKm.toLocaleString('pt-BR')} km</span>`:'';
+      const tankBadge=c.tankFull?` <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">🅕 Cheio</span>`:'';
+      const litersBadge=c.liters?` <span style="font-size:10px;background:#f3f4f6;color:#374151;padding:1px 6px;border-radius:99px">${c.liters}L</span>`:'';
+      const extras=odomBadge+tankBadge+litersBadge;
+      return `<div class="list-row"><div class="icon-circle" style="background:#fff7ed">⛽</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#111827">${c.category}${c.note?' — '+c.note:''}${extras}</div><div style="font-size:12px;color:#9ca3af">${fmtDate(c.date)}</div></div><div style="text-align:right"><div style="font-weight:600;color:#374151">${fmt(c.amount)}</div><button onclick="openCustoModal('car','${c.id}')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0">✏️</button> <button onclick="deleteCost('${c.id}')" style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:0">✕</button></div></div>`;
+    }).join('')
     :'<div class="empty-state" style="padding:16px 0"><div style="font-size:36px">🚗</div><div style="font-size:14px;font-weight:500;margin-top:8px">Sem gastos de carro</div></div>');
   } else if(subTab.gastos==='corretagem') {
     const entries=costsInMonth(ym,'brokerage').sort((a,b)=>b.date.localeCompare(a.date));
@@ -1754,6 +2482,8 @@ function renderBanco() {
       return `<div class="card" style="margin-bottom:10px"><div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px"><div class="color-dot" style="background:${d.color};margin-top:5px"></div><div style="flex:1">${idx===0?'<span style="font-size:11px;background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:99px;font-weight:500;display:inline-block;margin-bottom:4px">Prioridade 🏔️</span>':''}<div style="font-size:16px;font-weight:700;color:#111827">${d.name}</div><div style="font-size:12px;color:#9ca3af">${d.creditor}</div></div><div style="display:flex;gap:4px"><button onclick="openDebtModal('${d.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px">✏️</button><button onclick="deleteDebt('${d.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px">🗑️</button></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div style="background:#fee2e2;border-radius:10px;padding:10px"><div style="font-size:11px;color:#7f1d1d">Saldo Devedor</div><div style="font-size:17px;font-weight:700;color:#dc2626">${fmt(d.remaining)}</div></div><div style="background:#f3f4f6;border-radius:10px;padding:10px"><div style="font-size:11px;color:#374151">Pgto. Mínimo</div><div style="font-size:17px;font-weight:700;color:#374151">${fmt(d.minPayment)}</div></div></div>${d.rate?`<div style="margin-top:8px;font-size:12px;color:#9ca3af">Juros: ${d.rate}% a.m.</div>`:''}${payoff}</div>`;
     }).join('')
     :'<div class="card"><div class="empty-state"><div style="font-size:36px">🎉</div><div style="font-size:14px;font-weight:500;margin-top:8px">Sem dívidas!</div></div></div>';
+  } else if(subTab.banco==='analise') {
+    subContent=renderBancoAnalise();
   } else {
     // Financiamentos
     const typeIcon={imovel:'🏠',veiculo:'🚗',outro:'📦'};
@@ -1802,8 +2532,318 @@ function renderBanco() {
       <button class="sub-tab-btn ${subTab.banco==='contas'?'active':''}" onclick="switchSubTab('banco','contas')">Contas</button>
       <button class="sub-tab-btn ${subTab.banco==='dividas'?'active':''}" onclick="switchSubTab('banco','dividas')">Dívidas</button>
       <button class="sub-tab-btn ${subTab.banco==='financiamentos'?'active':''}" onclick="switchSubTab('banco','financiamentos')">Financ.</button>
+      <button class="sub-tab-btn ${subTab.banco==='analise'?'active':''}" onclick="switchSubTab('banco','analise')">📈 Análise</button>
     </div>
     ${subTab.banco==='contas'?`<div class="card">${subContent}</div>`:subContent}`;
+
+  // Renderiza análise depois de o DOM existir
+  if(subTab.banco==='analise') setTimeout(renderBancoAnaliseCharts,80);
+}
+
+function renderBancoAnalise() {
+  if(!db.financings || db.financings.length===0) {
+    return `<div class="card"><div class="empty-state"><div style="font-size:36px">📊</div><div style="font-size:14px;font-weight:500;margin-top:8px">Sem financiamentos cadastrados</div><div style="font-size:13px;margin-top:4px">Adicione um financiamento na aba "Financ." para ver os gráficos.</div></div></div>`;
+  }
+  const typeIcon={imovel:'🏠',veiculo:'🚗',outro:'📦'};
+  // Consolidados
+  let totalFinanciado=0, totalSaldo=0, totalJaPago=0, totalJurosFuturos=0, totalValorBens=0;
+  const perFin=[];
+  db.financings.forEach(f=>{
+    const sched=calcAmortization(f);
+    const paidIdx=Math.max(0,(f.currentInstallment||1)-1);
+    const remaining=financingRemaining(f);
+    const paidSoFar=sched.slice(0,paidIdx).reduce((s,r)=>s+r.pmt,0);
+    const interestRemaining=sched.slice(paidIdx).reduce((s,r)=>s+r.interest,0);
+    totalFinanciado+=f.financedAmount;
+    totalSaldo+=remaining;
+    totalJaPago+=paidSoFar;
+    totalJurosFuturos+=interestRemaining;
+    totalValorBens+=(f.assetValue||0);
+    perFin.push({f,sched,paidIdx,remaining,paidSoFar,interestRemaining});
+  });
+  // Patrimônio gerado pelos bens: valor do bem - saldo devedor
+  const patrimonioBens=totalValorBens-totalSaldo;
+  const pctTotalPago=totalFinanciado>0?((totalFinanciado-totalSaldo)/totalFinanciado*100):0;
+
+  // Card por-financiamento
+  const finCards=perFin.map(({f,paidIdx,remaining,paidSoFar,interestRemaining})=>{
+    const pct=Math.max(0,Math.min(100,((f.financedAmount-remaining)/f.financedAmount)*100));
+    const pat=(f.assetValue||0)-remaining;
+    return `<div class="card" style="margin-bottom:10px;border-left:4px solid ${f.color}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="font-size:24px">${typeIcon[f.type]||'📦'}</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:#111827">${f.name}</div>
+          <div style="font-size:11px;color:#9ca3af">${f.amortType.toUpperCase()} · Parcela ${f.currentInstallment||1} de ${f.termMonths}</div>
+        </div>
+        <button onclick="openAmortModal('${f.id}')" style="background:#eff6ff;border:none;border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;color:#2563eb;font-weight:600">📊 Detalhes</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+        <div style="background:#fee2e2;border-radius:8px;padding:8px"><div style="font-size:10px;color:#7f1d1d">Saldo</div><div style="font-size:14px;font-weight:700;color:#dc2626">${fmt(remaining)}</div></div>
+        <div style="background:#d1fae5;border-radius:8px;padding:8px"><div style="font-size:10px;color:#065f46">Já pago</div><div style="font-size:14px;font-weight:700;color:#059669">${fmt(paidSoFar)}</div></div>
+        ${f.assetValue?`<div style="background:#dbeafe;border-radius:8px;padding:8px"><div style="font-size:10px;color:#1e40af">Bem vale</div><div style="font-size:14px;font-weight:700;color:#2563eb">${fmt(f.assetValue)}</div></div>`:''}
+        ${f.assetValue?`<div style="background:${pat>=0?'#f0fdf4':'#fee2e2'};border-radius:8px;padding:8px"><div style="font-size:10px;color:${pat>=0?'#065f46':'#7f1d1d'}">Patrim. atual</div><div style="font-size:14px;font-weight:700;color:${pat>=0?'#059669':'#dc2626'}">${pat<0?'-':''}${fmt(Math.abs(pat))}</div></div>`:''}
+      </div>
+      <div style="font-size:11px;color:#6b7280;display:flex;justify-content:space-between;margin-bottom:4px"><span>${pct.toFixed(1)}% amortizado</span><span>Juros restantes: ${fmt(interestRemaining)}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="background:${f.color};width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  return `
+    <!-- Resumo consolidado -->
+    <div class="card" style="background:linear-gradient(135deg,#1e3a5f,#0f172a);color:white;margin-bottom:12px">
+      <div style="font-size:12px;opacity:.8;margin-bottom:2px">📊 Análise Consolidada dos Financiamentos</div>
+      <div style="font-size:13px;opacity:.7;margin-bottom:14px">${db.financings.length} financiamento${db.financings.length>1?'s':''} ativo${db.financings.length>1?'s':''}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
+          <div style="font-size:10px;opacity:.7">💰 Total financiado</div>
+          <div style="font-size:16px;font-weight:700;margin-top:2px">${fmt(totalFinanciado)}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
+          <div style="font-size:10px;opacity:.7">📉 Saldo restante</div>
+          <div style="font-size:16px;font-weight:700;margin-top:2px;color:#fca5a5">${fmt(totalSaldo)}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
+          <div style="font-size:10px;opacity:.7">✅ Já pago</div>
+          <div style="font-size:16px;font-weight:700;margin-top:2px;color:#86efac">${fmt(totalJaPago)}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
+          <div style="font-size:10px;opacity:.7">⚠️ Juros futuros</div>
+          <div style="font-size:16px;font-weight:700;margin-top:2px;color:#fcd34d">${fmt(totalJurosFuturos)}</div>
+        </div>
+      </div>
+      ${totalValorBens>0?`<div style="margin-top:10px;padding:10px;background:rgba(16,185,129,.15);border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px">💎 Patrimônio dos bens</span>
+        <span style="font-size:16px;font-weight:800;color:${patrimonioBens>=0?'#86efac':'#fca5a5'}">${patrimonioBens<0?'-':''}${fmt(Math.abs(patrimonioBens))}</span>
+      </div>`:''}
+      <div style="margin-top:10px">
+        <div style="font-size:11px;opacity:.8;margin-bottom:4px;display:flex;justify-content:space-between"><span>Progresso total</span><span>${pctTotalPago.toFixed(1)}%</span></div>
+        <div style="height:6px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,#10b981,#34d399);width:${pctTotalPago}%;transition:width .6s"></div></div>
+      </div>
+    </div>
+
+    <!-- Gráfico 1: Evolução do saldo devedor -->
+    <div class="card">
+      <div style="font-weight:600;color:#111827;margin-bottom:4px">📉 Evolução do Saldo Devedor</div>
+      <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">Quanto resta pagar em cada financiamento ao longo do tempo</div>
+      <div style="position:relative;height:240px"><canvas id="analise-chart-saldo"></canvas></div>
+    </div>
+
+    <!-- Gráfico 2: Patrimônio dos bens -->
+    ${totalValorBens>0?`<div class="card">
+      <div style="font-weight:600;color:#111827;margin-bottom:4px">💎 Patrimônio dos Bens ao Longo do Tempo</div>
+      <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">Valor do bem menos saldo devedor (quanto realmente é seu)</div>
+      <div style="position:relative;height:220px"><canvas id="analise-chart-patrimonio"></canvas></div>
+    </div>`:''}
+
+    <!-- Gráfico 3: Composição da parcela atual -->
+    <div class="card">
+      <div style="font-weight:600;color:#111827;margin-bottom:4px">🔍 Composição das Parcelas Atuais</div>
+      <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">Quanto da parcela vai pra amortização vs juros</div>
+      <div style="position:relative;height:240px"><canvas id="analise-chart-composicao"></canvas></div>
+    </div>
+
+    <!-- Simulador de antecipação -->
+    <div class="card" style="background:#fef7f3;border:1.5px solid #fce7f3">
+      <div style="font-weight:600;color:#111827;margin-bottom:4px">🚀 Simulador de Antecipação</div>
+      <div style="font-size:11px;color:#9ca3af;margin-bottom:14px">Veja o impacto de pagar parcelas extras todo mês</div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label" style="font-size:12px">Financiamento</label>
+        <select class="form-select" id="sim-fin-select" onchange="renderSimulador()">
+          ${db.financings.map(f=>`<option value="${f.id}">${typeIcon[f.type]} ${f.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label" style="font-size:12px">Valor extra mensal (R$)</label>
+        <input type="number" inputmode="decimal" class="form-input" id="sim-extra" placeholder="Ex: 500" step="50" min="0" value="500" oninput="renderSimulador()" style="font-size:18px;font-weight:600;text-align:center">
+      </div>
+      <div id="sim-resultado" style="margin-top:12px"></div>
+    </div>
+
+    <!-- Cards por financiamento -->
+    <div style="margin-top:14px">
+      <div style="font-weight:600;color:#111827;margin-bottom:10px;font-size:14px">📋 Detalhamento</div>
+      ${finCards}
+    </div>
+  `;
+}
+
+let analiseCharts = { saldo:null, patrimonio:null, composicao:null };
+
+function renderBancoAnaliseCharts() {
+  // Destruir charts antigos
+  Object.values(analiseCharts).forEach(c=>{ if(c) c.destroy(); });
+  analiseCharts={saldo:null, patrimonio:null, composicao:null};
+
+  const fins=db.financings||[];
+  if(!fins.length) return;
+
+  // ── Gráfico 1: Saldo devedor ────────────────────────
+  const ctx1=document.getElementById('analise-chart-saldo')?.getContext('2d');
+  if(ctx1) {
+    const maxN=Math.max(...fins.map(f=>f.termMonths));
+    const step=Math.max(1,Math.floor(maxN/30));
+    const labels=[];
+    for(let i=0;i<maxN;i+=step) labels.push('P'+(i+1));
+    if(!labels.includes('P'+maxN)) labels.push('P'+maxN);
+    const datasets=fins.map(f=>{
+      const sched=calcAmortization(f);
+      const data=labels.map(lbl=>{
+        const idx=parseInt(lbl.substring(1))-1;
+        return idx<sched.length?sched[idx].balance:0;
+      });
+      const paidIdx=(f.currentInstallment||1)-1;
+      return {
+        label:f.name,
+        data:data,
+        borderColor:f.color,
+        backgroundColor:f.color+'22',
+        fill:true,
+        tension:.3,
+        pointRadius:0,
+        borderWidth:2
+      };
+    });
+    analiseCharts.saldo=new Chart(ctx1,{type:'line',data:{labels,datasets},options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:8,usePointStyle:true}},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fmt(ctx.parsed.y)}}},
+      scales:{y:{ticks:{callback:v=>v>=1000?'R$'+(v/1000).toFixed(0)+'k':'R$'+v,font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{display:false}}}
+    }});
+  }
+
+  // ── Gráfico 2: Patrimônio dos bens ──────────────────
+  const finsComBem=fins.filter(f=>(f.assetValue||0)>0);
+  const ctx2=document.getElementById('analise-chart-patrimonio')?.getContext('2d');
+  if(ctx2 && finsComBem.length) {
+    const maxN=Math.max(...finsComBem.map(f=>f.termMonths));
+    const step=Math.max(1,Math.floor(maxN/30));
+    const labels=[];
+    for(let i=0;i<maxN;i+=step) labels.push('P'+(i+1));
+    if(!labels.includes('P'+maxN)) labels.push('P'+maxN);
+    const datasets=finsComBem.map(f=>{
+      const sched=calcAmortization(f);
+      const data=labels.map(lbl=>{
+        const idx=parseInt(lbl.substring(1))-1;
+        const bal=idx<sched.length?sched[idx].balance:0;
+        return (f.assetValue||0)-bal;
+      });
+      return {
+        label:f.name+' (patrim.)',
+        data,
+        borderColor:f.color,
+        backgroundColor:f.color+'33',
+        fill:true,
+        tension:.3,
+        pointRadius:0,
+        borderWidth:2
+      };
+    });
+    analiseCharts.patrimonio=new Chart(ctx2,{type:'line',data:{labels,datasets},options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:8,usePointStyle:true}},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fmt(ctx.parsed.y)}}},
+      scales:{y:{ticks:{callback:v=>v>=1000?'R$'+(v/1000).toFixed(0)+'k':'R$'+v,font:{size:10}},grid:{color:'#f3f4f6'}},x:{ticks:{font:{size:9},maxRotation:0,autoSkip:true,maxTicksLimit:8},grid:{display:false}}}
+    }});
+  }
+
+  // ── Gráfico 3: Composição parcela atual ─────────────
+  const ctx3=document.getElementById('analise-chart-composicao')?.getContext('2d');
+  if(ctx3) {
+    const labels=fins.map(f=>f.name);
+    const amorts=[], juros=[];
+    fins.forEach(f=>{
+      const sched=calcAmortization(f);
+      const cur=sched[Math.min((f.currentInstallment||1)-1,sched.length-1)];
+      amorts.push(cur?cur.amort:0);
+      juros.push(cur?cur.interest:0);
+    });
+    analiseCharts.composicao=new Chart(ctx3,{type:'bar',data:{labels,datasets:[
+      {label:'Amortização',data:amorts,backgroundColor:'#10b981',borderRadius:6},
+      {label:'Juros',data:juros,backgroundColor:'#ef4444',borderRadius:6}
+    ]},options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{position:'bottom',labels:{font:{family:'Inter',size:11},padding:8,usePointStyle:true}},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+fmt(ctx.parsed.x)}}},
+      scales:{x:{stacked:true,ticks:{callback:v=>'R$'+v.toFixed(0),font:{size:10}},grid:{color:'#f3f4f6'}},y:{stacked:true,ticks:{font:{size:11}},grid:{display:false}}}
+    }});
+  }
+
+  // Renderiza o simulador
+  renderSimulador();
+}
+
+function simulateExtra(f, extraMonthly) {
+  // Recalcula amortização aplicando R$ extra a cada parcela após parcela atual
+  const r=f.rate/100;
+  const cur=Math.max(0,(f.currentInstallment||1)-1);
+  const sched=calcAmortization(f);
+  let bal=cur<sched.length?sched[cur].balance:f.financedAmount;
+  let basePmt=sched[Math.min(cur,sched.length-1)]?.pmt||0;
+  let monthsExtra=0, totalPaid=0, interestPaid=0;
+  const safety=f.termMonths*2;
+  while(bal>0.01 && monthsExtra<safety) {
+    const interest=bal*r;
+    interestPaid+=interest;
+    let pay;
+    if(f.amortType==='price') pay=basePmt+extraMonthly;
+    else {
+      const baseAmort=f.financedAmount/f.termMonths;
+      pay=baseAmort+interest+extraMonthly;
+    }
+    if(pay>bal+interest) pay=bal+interest;
+    const principal=pay-interest;
+    bal-=principal;
+    totalPaid+=pay;
+    monthsExtra++;
+  }
+  return {months:monthsExtra, totalPaid, interestPaid};
+}
+
+function renderSimulador() {
+  const el=document.getElementById('sim-resultado');
+  const sel=document.getElementById('sim-fin-select');
+  if(!el||!sel) return;
+  const f=db.financings.find(x=>x.id===sel.value);
+  if(!f) return;
+  const extra=parseFloat(document.getElementById('sim-extra').value)||0;
+  const cur=Math.max(0,(f.currentInstallment||1)-1);
+  const remainingMonths=f.termMonths-cur;
+  const sched=calcAmortization(f);
+  const baseInterest=sched.slice(cur).reduce((s,r)=>s+r.interest,0);
+  const baseTotal=sched.slice(cur).reduce((s,r)=>s+r.pmt,0);
+
+  if(extra<=0) {
+    el.innerHTML=`<div style="padding:12px;background:white;border-radius:10px;text-align:center;color:#9ca3af;font-size:13px">Digite um valor extra para simular.</div>`;
+    return;
+  }
+
+  const sim=simulateExtra(f, extra);
+  const monthsSaved=remainingMonths-sim.months;
+  const interestSaved=baseInterest-sim.interestPaid;
+  const dt=new Date(); dt.setMonth(dt.getMonth()+sim.months);
+  const dtBase=new Date(); dtBase.setMonth(dtBase.getMonth()+remainingMonths);
+
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div style="background:#d1fae5;border-radius:10px;padding:10px">
+        <div style="font-size:10px;color:#065f46">⏱️ Quita ${monthsSaved>0?monthsSaved:'0'} ${monthsSaved===1?'mês':'meses'} antes</div>
+        <div style="font-size:18px;font-weight:800;color:#059669;margin-top:2px">${sim.months} parc.</div>
+        <div style="font-size:10px;color:#065f46;margin-top:1px">${dt.toLocaleDateString('pt-BR',{month:'short',year:'numeric'})}</div>
+      </div>
+      <div style="background:#fef3c7;border-radius:10px;padding:10px">
+        <div style="font-size:10px;color:#92400e">💰 Economia em juros</div>
+        <div style="font-size:18px;font-weight:800;color:#d97706;margin-top:2px">${interestSaved>0?fmt(interestSaved):'R$ 0'}</div>
+        <div style="font-size:10px;color:#92400e;margin-top:1px">vs ${fmt(baseInterest)} total</div>
+      </div>
+    </div>
+    <div style="background:white;border-radius:10px;padding:10px;font-size:11px;color:#6b7280;line-height:1.5">
+      📅 <strong>Sem antecipação:</strong> ${remainingMonths} parcelas, quita em ${dtBase.toLocaleDateString('pt-BR',{month:'short',year:'numeric'})}<br>
+      🚀 <strong>Com R$ ${extra.toFixed(0)} extra/mês:</strong> ${sim.months} parcelas, quita em ${dt.toLocaleDateString('pt-BR',{month:'short',year:'numeric'})}
+    </div>
+  `;
 }
 
 function renderResumo() {
@@ -1896,9 +2936,9 @@ function renderResumo() {
   // ── Audit tab content ────────────────────────────────────
   let auditContent = '';
   if(subTab.resumo==='auditoria') {
-    const ws=currentAuditWeek||getMonday(todayStr());
+    const ws=currentAuditWeek||getSunday(todayStr());
     const we=getWeekEnd(ws);
-    const isCurrentWeek=ws===getMonday(todayStr());
+    const isCurrentWeek=ws===getSunday(todayStr());
     const audit=getAuditForWeek(ws);
     const checks=Array.isArray(audit?.checks)&&audit.checks.length===AUDIT_CHECKS.length?audit.checks:new Array(AUDIT_CHECKS.length).fill(false);
     const doneCount=checks.filter(Boolean).length;
@@ -1959,7 +2999,7 @@ function renderResumo() {
         <div style="margin-bottom:10px">
           <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Renda</div>
           ${uberW>0?`<div class="stat-row"><span style="color:#6b7280">🚗 Uber</span><span style="font-weight:600;color:#059669">${fmt(uberW)}</span></div>`:''}
-          ${salW>0?`<div class="stat-row"><span style="color:#6b7280">👩 Jaqueline</span><span style="font-weight:600;color:#be185d">${fmt(salW)}</span></div>`:''}
+          ${salW>0?`<div class="stat-row"><span style="color:#6b7280">👩 ${spouseShort()}</span><span style="font-weight:600;color:#be185d">${fmt(salW)}</span></div>`:''}
           ${comW>0?`<div class="stat-row"><span style="color:#6b7280">🤝 Comissões</span><span style="font-weight:600;color:#2563eb">${fmt(comW)}</span></div>`:''}
           ${rendaW===0?`<div style="font-size:13px;color:#9ca3af;padding:6px 0">Nenhuma renda registrada esta semana.</div>`:''}
           <div class="stat-row" style="border-top:1px solid #f3f4f6;margin-top:4px;padding-top:10px"><span style="font-weight:600;color:#374151">Total Renda</span><span style="font-weight:700;color:#059669">${fmt(rendaW)}</span></div>
@@ -1981,11 +3021,20 @@ function renderResumo() {
       <!-- Km -->
       <div class="card" style="margin-bottom:12px">
         <div style="font-weight:600;color:#111827;margin-bottom:10px">🚗 Quilometragem da Semana</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
           <div style="background:#e0f2fe;border-radius:10px;padding:10px"><div style="font-size:11px;color:#0369a1">Km Rodados</div><div style="font-size:20px;font-weight:700;color:#0369a1">${kmW} km</div></div>
           <div style="background:#fff7ed;border-radius:10px;padding:10px"><div style="font-size:11px;color:#c2410c">Combustível Est.</div><div style="font-size:20px;font-weight:700;color:#ea580c">${fmt(fuelW)}</div></div>
         </div>
-        ${kmW===0?`<div style="font-size:12px;color:#9ca3af;margin-top:8px">Nenhum km registrado. Use o botão 📏 Km no Dashboard.</div>`:`<div style="font-size:12px;color:#6b7280;margin-top:8px">Custo/km: R$ ${kmW>0?(fuelW/kmW).toFixed(3):'—'}</div>`}
+        <!-- Odômetro atual -->
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:600;color:#065f46;margin-bottom:6px">🛣️ Odômetro do carro AGORA</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="number" inputmode="numeric" class="form-input" id="audit-odometer" placeholder="${lastOdometerReading()?.km?'Última: '+lastOdometerReading().km.toLocaleString('pt-BR'):'Ex: 87420'}" step="1" min="0" value="${audit?.odometerKm||''}" style="font-size:18px;font-weight:700;text-align:center;background:white">
+            <span style="font-size:13px;color:#065f46">km</span>
+          </div>
+          <div style="font-size:11px;color:#065f46;margin-top:6px">Salvo junto com o resto da auditoria. Conferir o painel do carro com seu cônjuge.</div>
+        </div>
+        ${kmW===0?`<div style="font-size:12px;color:#9ca3af;margin-top:8px">Nenhum km registrado. Use o botão 🛣️ Odômetro no Dashboard.</div>`:`<div style="font-size:12px;color:#6b7280;margin-top:8px">Custo/km: R$ ${kmW>0?(fuelW/kmW).toFixed(3):'—'} · Consumo: ${effectiveKmPerLiter().toFixed(2)} km/L${realKmPerLiter()?' (real)':' (estimado)'}</div>`}
       </div>
 
       <!-- Alertas -->
@@ -2079,7 +3128,9 @@ document.getElementById('btn-open-metas').addEventListener('click', openGoalsMod
 
 async function init() {
   currentMonth=todayStr().substring(0,7);
-  currentAuditWeek=getMonday(todayStr());
+  currentAuditWeek=getSunday(todayStr());
+  registerSW();
+  if(notificationsEnabled()) scheduleNotifications();
   updateHeader();
   const hasSupa=initSupabase();
   if(hasSupa&&roomCode) {
