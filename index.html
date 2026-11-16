@@ -238,6 +238,7 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
     <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:18px">Nova Renda</h3>
     <div class="type-switch">
       <button class="type-btn active" id="inc-btn-uber" onclick="setIncType('uber')">🚗 Uber</button>
+      <button class="type-btn" id="inc-btn-99" onclick="setIncType('99')">🟡 99</button>
       <button class="type-btn" id="inc-btn-sal" onclick="setIncType('salario')">👩 <span id="inc-btn-sal-label">Cônjuge</span></button>
       <button class="type-btn" id="inc-btn-com" onclick="setIncType('comissao')">🤝 Comissão</button>
     </div>
@@ -1206,8 +1207,8 @@ function saveDb() {
 // ============================================================
 function setIncType(t) {
   incType = t;
-  ['uber','sal','com'].forEach(k => document.getElementById('inc-btn-'+k)?.classList.remove('active'));
-  const map = {uber:'inc-btn-uber', salario:'inc-btn-sal', comissao:'inc-btn-com'};
+  ['uber','99','sal','com'].forEach(k => document.getElementById('inc-btn-'+k)?.classList.remove('active'));
+  const map = {uber:'inc-btn-uber', '99':'inc-btn-99', salario:'inc-btn-sal', comissao:'inc-btn-com'};
   document.getElementById(map[t])?.classList.add('active');
   // Toggle holerite + cliente fields
   const holToggle=document.getElementById('inc-holerite-toggle');
@@ -2403,14 +2404,14 @@ function renderDashboardAchievements() {
 
 function renderRenda() {
   const ym=currentMonth;
-  const uberT=incomeTotal(ym,'uber'), salT=incomeTotal(ym,'salario'), comT=incomeTotal(ym,'comissao');
+  const uberT=incomeTotal(ym,'uber'), n99T=incomeTotal(ym,'99'), salT=incomeTotal(ym,'salario'), comT=incomeTotal(ym,'comissao');
   const pendRec=db.receivables.filter(r=>r.status==='pending').reduce((s,r)=>s+r.amount,0);
   let subContent='';
   if(subTab.renda==='lancamentos') {
     const entries=incomeInMonth(ym).sort((a,b)=>b.date.localeCompare(a.date));
-    const incIcons={uber:'🚗',salario:'👩',comissao:'🤝'};
-    const incColors={uber:'#d1fae5',salario:'#fce7f3',comissao:'#dbeafe'};
-    const incLabels={uber:'Uber',salario:spouseName(),comissao:'Comissão'};
+    const incIcons={uber:'🚗','99':'🟡',salario:'👩',comissao:'🤝'};
+    const incColors={uber:'#d1fae5','99':'#fef9c3',salario:'#fce7f3',comissao:'#dbeafe'};
+    const incLabels={uber:'Uber','99':'99',salario:spouseName(),comissao:'Comissão'};
     subContent=entries.length?entries.map(e=>{
       const ba=e.bankAccountId?db.bankAccounts.find(b=>b.id===e.bankAccountId):null;
       const bankBadge=ba?` <span style="font-size:10px;background:${ba.color}22;color:#374151;padding:1px 6px;border-radius:99px;margin-left:4px">→ ${ba.bank}</span>`:'';
@@ -2432,13 +2433,16 @@ function renderRenda() {
     <div class="month-nav"><button onclick="changeMonth(-1)">‹</button><div style="flex:1;text-align:center;font-weight:600;color:#111827">${monthLabel(ym)}</div><button onclick="changeMonth(1)">›</button></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div class="card" style="margin-bottom:0;background:#d1fae5"><div style="font-size:11px;color:#065f46;font-weight:500">🚗 Uber</div><div style="font-size:20px;font-weight:700;color:#059669;margin-top:4px">${fmt(uberT)}</div></div>
-      <div class="card" style="margin-bottom:0;background:#fce7f3"><div style="font-size:11px;color:#831843;font-weight:500">👩 ${spouseShort()}</div><div style="font-size:20px;font-weight:700;color:#be185d;margin-top:4px">${fmt(salT)}</div></div>
+      <div class="card" style="margin-bottom:0;background:#fef9c3"><div style="font-size:11px;color:#854d0e;font-weight:500">🟡 99</div><div style="font-size:20px;font-weight:700;color:#a16207;margin-top:4px">${fmt(n99T)}</div></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="card" style="margin-bottom:0;background:#fce7f3"><div style="font-size:11px;color:#831843;font-weight:500">👩 ${spouseShort()}</div><div style="font-size:20px;font-weight:700;color:#be185d;margin-top:4px">${fmt(salT)}</div></div>
       <div class="card" style="margin-bottom:0;background:#dbeafe"><div style="font-size:11px;color:#1e3a5f;font-weight:500">🤝 Comissões</div><div style="font-size:20px;font-weight:700;color:#2563eb;margin-top:4px">${fmt(comT)}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px">
       <div class="card" style="margin-bottom:0;background:#fef3c7"><div style="font-size:11px;color:#92400e;font-weight:500">⚠️ A Receber</div><div style="font-size:20px;font-weight:700;color:#d97706;margin-top:4px">${fmt(pendRec)}</div></div>
     </div>
-    <div class="card" style="background:#f0fdf4;border:1.5px solid #bbf7d0;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;color:#065f46;font-weight:600">Total do Mês</div><div style="font-size:22px;font-weight:800;color:#059669">${fmt(uberT+salT+comT)}</div></div></div>
+    <div class="card" style="background:#f0fdf4;border:1.5px solid #bbf7d0;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;color:#065f46;font-weight:600">Total do Mês</div><div style="font-size:22px;font-weight:800;color:#059669">${fmt(uberT+n99T+salT+comT)}</div></div></div>
     <div class="sub-tabs">
       <button class="sub-tab-btn ${subTab.renda==='lancamentos'?'active':''}" onclick="switchSubTab('renda','lancamentos')">Lançamentos</button>
       <button class="sub-tab-btn ${subTab.renda==='inadimplencias'?'active':''}" onclick="switchSubTab('renda','inadimplencias')">Inadimplências</button>
@@ -2982,9 +2986,10 @@ function renderResumo() {
     // Income this week
     const wi=db.income.filter(i=>i.date>=ws&&i.date<=we);
     const uberW=wi.filter(i=>i.type==='uber').reduce((s,i)=>s+i.amount,0);
+    const n99W=wi.filter(i=>i.type==='99').reduce((s,i)=>s+i.amount,0);
     const salW=wi.filter(i=>i.type==='salario').reduce((s,i)=>s+i.amount,0);
     const comW=wi.filter(i=>i.type==='comissao').reduce((s,i)=>s+i.amount,0);
-    const rendaW=uberW+salW+comW;
+    const rendaW=uberW+n99W+salW+comW;
     // Costs this week
     const wc=db.costs.filter(c=>c.date>=ws&&c.date<=we);
     const carW=wc.filter(c=>c.type==='car').reduce((s,c)=>s+c.amount,0);
@@ -3036,6 +3041,7 @@ function renderResumo() {
         <div style="margin-bottom:10px">
           <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Renda</div>
           ${uberW>0?`<div class="stat-row"><span style="color:#6b7280">🚗 Uber</span><span style="font-weight:600;color:#059669">${fmt(uberW)}</span></div>`:''}
+          ${n99W>0?`<div class="stat-row"><span style="color:#6b7280">🟡 99</span><span style="font-weight:600;color:#a16207">${fmt(n99W)}</span></div>`:''}
           ${salW>0?`<div class="stat-row"><span style="color:#6b7280">👩 ${spouseShort()}</span><span style="font-weight:600;color:#be185d">${fmt(salW)}</span></div>`:''}
           ${comW>0?`<div class="stat-row"><span style="color:#6b7280">🤝 Comissões</span><span style="font-weight:600;color:#2563eb">${fmt(comW)}</span></div>`:''}
           ${rendaW===0?`<div style="font-size:13px;color:#9ca3af;padding:6px 0">Nenhuma renda registrada esta semana.</div>`:''}
