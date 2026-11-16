@@ -9,19 +9,24 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#10b981">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>FinanceUber</title>
-<script src="config.js" onerror="console.warn('config.js não encontrado — modo offline')"></script>
-<script>
-  if (typeof window.SUPABASE_URL === 'undefined') window.SUPABASE_URL = null;
-  if (typeof window.SUPABASE_ANON_KEY === 'undefined') window.SUPABASE_ANON_KEY = null;
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box}
+*,*::before,*::after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}
+html{line-height:1.5;-webkit-text-size-adjust:100%}
+body,h1,h2,h3,h4,p,figure,blockquote,dl,dd,hr{margin:0}
+h1,h2,h3,h4{font-size:inherit;font-weight:inherit}
+ol,ul{margin:0;padding:0;list-style:none}
+button,input,select,textarea{font-family:inherit;font-size:100%;font-weight:inherit;line-height:inherit;color:inherit;margin:0;padding:0}
+button,select{text-transform:none}
+button,[type=button],[type=submit]{-webkit-appearance:button;background-color:transparent;background-image:none;cursor:pointer}
+table{border-collapse:collapse;text-indent:0;border-color:inherit}
+img,svg,canvas{display:block;vertical-align:middle}img{max-width:100%;height:auto}
+summary{display:list-item}
+input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}
+textarea{resize:vertical}
 body{font-family:'Inter',sans-serif;background:#f0fdf4;min-height:100vh;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
 .app-header{position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#10b981,#059669);color:white;z-index:50;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(16,185,129,.3)}
 main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
@@ -70,11 +75,6 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
 .empty-state{text-align:center;padding:28px 16px;color:#9ca3af}
 .section-title{font-size:20px;font-weight:700;color:#111827;margin-bottom:16px}
 .icon-circle{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.sync-dot{width:8px;height:8px;border-radius:50%;transition:background .4s}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.sync-pulsing{animation:pulse 1.2s infinite}
-.room-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.2);border-radius:99px;padding:3px 10px;font-size:11px;cursor:pointer}
-.code-big{font-size:24px;font-weight:800;letter-spacing:4px;color:#059669;text-align:center;background:#f0fdf4;border-radius:12px;padding:16px;margin:12px 0;word-break:break-all}
 .sbadge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600}
 </style>
 </head>
@@ -86,13 +86,6 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
     <div style="font-size:17px;font-weight:700" id="header-date"></div>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
-    <div id="sync-area" style="display:none;flex-direction:column;align-items:center;gap:2px">
-      <div class="sync-dot" id="sync-dot" style="background:rgba(255,255,255,.3)"></div>
-      <div style="font-size:9px;opacity:.7" id="sync-label">--</div>
-    </div>
-    <button id="btn-room" style="display:none" onclick="openRoomPanel()">
-      <div class="room-badge">👨‍👩‍ <span id="room-badge-code">----</span></div>
-    </button>
     <button id="btn-config" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:36px;height:36px;color:white;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">⚙️</button>
   </div>
 </header>
@@ -101,6 +94,12 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
 
 <!-- DASHBOARD -->
 <section id="sec-dashboard" class="section active">
+  <!-- 💾 Lembrete de backup (dados ficam só no aparelho) -->
+  <div id="dash-backup"></div>
+  <!-- 🏁 Modo Sprint (daily + semana) -->
+  <div id="dash-sprint" style="display:none"></div>
+  <!-- Painel completo (escondido atrás de "Ver tudo" no Modo Sprint) -->
+  <div id="dash-full">
   <div class="card" style="background:linear-gradient(135deg,#10b981,#059669);color:white">
     <div style="font-size:12px;opacity:.8;margin-bottom:2px">Saldo do Mês</div>
     <div class="big-amount" id="dash-saldo">R$ 0,00</div>
@@ -181,6 +180,7 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
 
   <!-- 🏆 Conquistas -->
   <div id="dash-achievements"></div>
+  </div><!-- /dash-full -->
 </section>
 
 <!-- RENDA -->
@@ -238,6 +238,7 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
     <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:18px">Nova Renda</h3>
     <div class="type-switch">
       <button class="type-btn active" id="inc-btn-uber" onclick="setIncType('uber')">🚗 Uber</button>
+      <button class="type-btn" id="inc-btn-99" onclick="setIncType('99')">🟡 99</button>
       <button class="type-btn" id="inc-btn-sal" onclick="setIncType('salario')">👩 <span id="inc-btn-sal-label">Cônjuge</span></button>
       <button class="type-btn" id="inc-btn-com" onclick="setIncType('comissao')">🤝 Comissão</button>
     </div>
@@ -530,12 +531,59 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
   </div></div>
 </div>
 
+<!-- ☀️ Abrir o dia -->
+<div class="modal" id="modal-abrir-dia">
+  <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
+    <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:4px">☀️ Abrir o dia</h3>
+    <p id="abrir-sub" style="font-size:13px;color:#6b7280;margin-bottom:14px"></p>
+    <div id="abrir-plan" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;margin-bottom:16px;font-size:13px;color:#065f46;line-height:1.7"></div>
+    <div class="form-group">
+      <label class="form-label">🛣️ Odômetro agora (km)</label>
+      <input type="number" inputmode="numeric" class="form-input" id="abrir-odo" placeholder="Ex: 10000" step="1" min="0" style="font-size:22px;font-weight:700;text-align:center">
+      <div id="abrir-odo-hint" style="font-size:11px;color:#9ca3af;margin-top:6px;text-align:center"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">🔋 Bateria agora (%) <span style="color:#9ca3af;font-weight:400">— opcional</span></label>
+      <input type="number" inputmode="numeric" class="form-input" id="abrir-bat" placeholder="Ex: 90" step="1" min="0" max="100">
+    </div>
+    <button class="btn-primary" onclick="saveAbrirDia()">🚀 Começar o dia</button>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-abrir-dia')">Cancelar</button>
+  </div></div>
+</div>
+
+<!-- 🌙 Fechar o dia -->
+<div class="modal" id="modal-fechar-dia">
+  <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
+    <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:4px">🌙 Fechar o dia</h3>
+    <p id="fechar-sub" style="font-size:13px;color:#6b7280;margin-bottom:14px"></p>
+    <div class="form-group">
+      <label class="form-label">🛣️ Odômetro agora (km)</label>
+      <input type="number" inputmode="numeric" class="form-input" id="fechar-odo" placeholder="Ex: 10300" step="1" min="0" oninput="updateFecharPreview()" style="font-size:22px;font-weight:700;text-align:center">
+      <div id="fechar-odo-hint" style="font-size:11px;color:#9ca3af;margin-top:6px;text-align:center"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label class="form-label">🚗 Uber hoje (R$)</label><input type="number" inputmode="decimal" class="form-input" id="fechar-uber" placeholder="0,00" step="0.01" min="0" oninput="updateFecharPreview()"></div>
+      <div class="form-group"><label class="form-label">🟡 99 hoje (R$)</label><input type="number" inputmode="decimal" class="form-input" id="fechar-99" placeholder="0,00" step="0.01" min="0" oninput="updateFecharPreview()"></div>
+    </div>
+    <div id="fechar-other-hint" style="display:none;font-size:11px;color:#92400e;background:#fef3c7;border-radius:8px;padding:8px;margin:-6px 0 14px"></div>
+    <div style="font-size:13px;font-weight:500;color:#374151;margin-bottom:8px">🎯 Leads gerados hoje</div>
+    <div id="fechar-leads" style="margin-bottom:14px"></div>
+    <div id="fechar-preview" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;margin-bottom:16px;font-size:13px;color:#065f46;line-height:1.7"></div>
+    <button class="btn-primary" onclick="saveFecharDia()">✅ Fechar o dia</button>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-fechar-dia')">Cancelar</button>
+  </div></div>
+</div>
+
 <!-- Car Setup -->
 <div class="modal" id="modal-car-setup">
   <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
     <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:18px">⚙️ Configurar Carro</h3>
-    <div class="form-group"><label class="form-label">Consumo (km por litro)</label><input type="number" inputmode="decimal" class="form-input" id="car-kml" placeholder="Ex: 10" step="0.1" min="1"></div>
-    <div class="form-group"><label class="form-label">Preço do Combustível (R$/litro)</label><input type="number" inputmode="decimal" class="form-input" id="car-price" placeholder="Ex: 6.00" step="0.01" min="0"></div>
+    <div class="type-switch">
+      <button class="type-btn active" id="car-type-combustao" onclick="setCarType('combustao')">⛽ Combustão</button>
+      <button class="type-btn" id="car-type-eletrico" onclick="setCarType('eletrico')">🔌 Elétrico</button>
+    </div>
+    <div class="form-group"><label class="form-label" id="car-kml-label">Consumo (km por litro)</label><input type="number" inputmode="decimal" class="form-input" id="car-kml" placeholder="Ex: 10" step="0.1" min="1"></div>
+    <div class="form-group"><label class="form-label" id="car-price-label">Preço do Combustível (R$/litro)</label><input type="number" inputmode="decimal" class="form-input" id="car-price" placeholder="Ex: 6.00" step="0.01" min="0"></div>
     <div id="car-cost-preview" style="background:#f0fdf4;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#065f46"></div>
     <button class="btn-primary" onclick="saveCarSetup()">Salvar</button>
     <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-car-setup')">Cancelar</button>
@@ -554,88 +602,37 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
   </div></div>
 </div>
 
-<!-- Sala Familiar -->
-<div class="modal" id="modal-room">
-  <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
-    <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:6px">👨‍👩‍ Sala Familiar</h3>
-    <p style="font-size:13px;color:#6b7280;margin-bottom:18px">Sincronize em tempo real com sua esposa.</p>
-    <div class="type-switch">
-      <button class="type-btn active" id="room-btn-new" onclick="setRoomMode('new')">✨ Criar sala</button>
-      <button class="type-btn" id="room-btn-join" onclick="setRoomMode('join')">🔑 Entrar</button>
-    </div>
-
-    <!-- CRIAR -->
-    <div id="room-new-section">
-      <div class="form-group">
-        <label class="form-label">Código da sala <span style="color:#9ca3af;font-weight:400">(ex: MARCO ou FAMILIA)</span></label>
-        <input type="text" class="form-input" id="room-new-code" placeholder="MARCO"
-          maxlength="12" style="text-transform:uppercase;letter-spacing:3px;font-size:22px;font-weight:700;text-align:center"
-          oninput="this.value=this.value.replace(/[^A-Z0-9]/gi,'').toUpperCase()">
-      </div>
-      <div class="form-group">
-        <label class="form-label">PIN de acesso <span style="color:#9ca3af;font-weight:400">(4–8 dígitos)</span></label>
-        <input type="tel" class="form-input" id="room-new-pin" placeholder="1234"
-          maxlength="8" style="font-size:28px;font-weight:800;letter-spacing:8px;text-align:center" inputmode="numeric">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Confirme o PIN</label>
-        <input type="tel" class="form-input" id="room-new-pin2" placeholder="1234"
-          maxlength="8" style="font-size:28px;font-weight:800;letter-spacing:8px;text-align:center" inputmode="numeric">
-      </div>
-      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;margin-bottom:14px;font-size:12px;color:#065f46">
-        💡 Depois de criar, mande o <strong>código</strong> e o <strong>PIN</strong> para seu cônjuge pelo WhatsApp. Só isso!
-      </div>
-      <button class="btn-primary" id="room-create-btn" onclick="createRoom()">✅ Criar Sala</button>
-    </div>
-
-    <!-- ENTRAR -->
-    <div id="room-join-section" style="display:none">
-      <div class="form-group">
-        <label class="form-label">Código da sala</label>
-        <input type="text" class="form-input" id="room-join-code" placeholder="MARCO"
-          maxlength="12" style="text-transform:uppercase;letter-spacing:3px;font-size:22px;font-weight:700;text-align:center"
-          oninput="this.value=this.value.replace(/[^A-Z0-9]/gi,'').toUpperCase()">
-      </div>
-      <div class="form-group">
-        <label class="form-label">PIN de acesso</label>
-        <input type="tel" class="form-input" id="room-join-pin" placeholder="1234"
-          maxlength="8" style="font-size:28px;font-weight:800;letter-spacing:8px;text-align:center" inputmode="numeric">
-      </div>
-      <p style="font-size:12px;color:#9ca3af;margin-bottom:16px">Os dados da sala serão carregados no seu dispositivo.</p>
-      <button class="btn-primary" onclick="joinRoom()">🔑 Entrar na Sala</button>
-    </div>
-  </div></div>
-</div>
-
 <!-- Config -->
 <div class="modal" id="modal-config">
   <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
     <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:18px">⚙️ Configurações</h3>
     <div class="form-group"><label class="form-label">Seu Nome</label><input type="text" class="form-input" id="cfg-name" placeholder="Seu nome"></div>
     <div class="form-group"><label class="form-label">Nome do(a) Cônjuge</label><input type="text" class="form-input" id="cfg-spouse" placeholder="Nome da esposa/marido"></div>
+    <details id="cfg-sprint" style="margin-bottom:16px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px">
+      <summary style="cursor:pointer;font-size:14px;font-weight:600;color:#111827">🏁 Modo Sprint</summary>
+      <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;cursor:pointer">
+        <span style="font-size:13px;color:#374151">Ativar Modo Sprint (Início simplificado)</span>
+        <input type="checkbox" id="sp-enabled" style="width:18px;height:18px;cursor:pointer">
+      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="grid-column:1/-1"><label class="form-label" style="font-size:12px">Início do sprint (segunda-feira)</label><input type="date" class="form-input" id="sp-startDate"></div>
+        <div><label class="form-label" style="font-size:12px">Semanas</label><input type="number" inputmode="numeric" class="form-input" id="sp-weeks" min="1"></div>
+        <div><label class="form-label" style="font-size:12px">Aluguel/semana (R$)</label><input type="number" inputmode="decimal" class="form-input" id="sp-rentWeekly" step="0.01"></div>
+        <div><label class="form-label" style="font-size:12px">Caução/semana (R$)</label><input type="number" inputmode="decimal" class="form-input" id="sp-cautionWeekly" step="0.01"></div>
+        <div><label class="form-label" style="font-size:12px">Semanas de caução</label><input type="number" inputmode="numeric" class="form-input" id="sp-cautionWeeks" min="0"></div>
+        <div><label class="form-label" style="font-size:12px">Limite km/semana</label><input type="number" inputmode="numeric" class="form-input" id="sp-kmLimitWeekly"></div>
+        <div><label class="form-label" style="font-size:12px">R$/km mínimo</label><input type="number" inputmode="decimal" class="form-input" id="sp-minRevPerKm" step="0.01"></div>
+        <div><label class="form-label" style="font-size:12px">Piso semanal (R$)</label><input type="number" inputmode="decimal" class="form-input" id="sp-weeklyFloor" step="0.01"></div>
+        <div><label class="form-label" style="font-size:12px">Meta semanal (R$)</label><input type="number" inputmode="decimal" class="form-input" id="sp-weeklyTarget" step="0.01"></div>
+        <div style="grid-column:1/-1"><label class="form-label" style="font-size:12px">Piso mensal do banco (R$)</label><input type="number" inputmode="decimal" class="form-input" id="sp-monthlyBankFloor" step="0.01"></div>
+      </div>
+      <button class="btn-outline" style="width:100%;margin-top:10px" onclick="closeModal('modal-config');openCarSetupModal()">🚗 Configurar carro (elétrico / combustão)</button>
+    </details>
     <button class="btn-primary" onclick="saveConfig()">Salvar</button>
-    <div id="cfg-room-info" style="margin-top:20px;padding:14px;background:#f0fdf4;border-radius:12px;border:1px solid #bbf7d0;display:none">
-      <div style="font-size:13px;font-weight:600;color:#065f46;margin-bottom:10px">👨‍👩‍ Sala Familiar Ativa</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <div style="background:white;border-radius:10px;padding:10px;text-align:center">
-          <div style="font-size:10px;color:#9ca3af;margin-bottom:2px">CÓDIGO</div>
-          <div style="font-size:18px;font-weight:800;letter-spacing:3px;color:#059669" id="cfg-room-code">---</div>
-        </div>
-        <div style="background:white;border-radius:10px;padding:10px;text-align:center">
-          <div style="font-size:10px;color:#9ca3af;margin-bottom:2px">PIN</div>
-          <div style="font-size:18px;font-weight:800;letter-spacing:4px;color:#6366f1" id="cfg-room-pin">****</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn-outline" style="flex:1;font-size:13px" onclick="copyCurrentRoomCode()">📋 Copiar p/ WhatsApp</button>
-        <button style="flex:1;padding:8px;background:#fee2e2;color:#dc2626;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif" onclick="leaveRoom()">🚪 Sair</button>
-      </div>
-    </div>
-    <div id="cfg-room-connect" style="margin-top:16px;display:none">
-      <button class="btn-outline" style="width:100%" onclick="closeModal('modal-config');openModal('modal-room')">👨‍👩‍ Conectar Sala Familiar</button>
-    </div>
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid #f3f4f6">
-      <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:10px">Backup de Dados</div>
+      <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:4px">💾 Backup de Dados</div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:4px;line-height:1.4">Seus dados ficam salvos só neste celular. Faça backup toda semana: toque em Exportar e salve em Arquivos, Drive ou WhatsApp.</div>
+      <div id="backup-info" style="font-size:12px;font-weight:600;margin-bottom:10px"></div>
       <div style="display:flex;gap:10px;margin-bottom:8px">
         <button class="btn-secondary" style="flex:1" onclick="exportData()">📤 Exportar</button>
         <button class="btn-secondary" style="flex:1" onclick="document.getElementById('import-file').click()">📥 Importar</button>
@@ -661,8 +658,6 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
 // CONSTANTS & STATE
 // ============================================================
 const DB_KEY        = 'finance_uber_v2';
-const ROOM_KEY      = 'finance_uber_room_v1';
-const ROOM_TOKEN_KEY= 'finance_uber_token_v1';
 const DEBT_COLORS   = ['#ef4444','#f97316','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#3b82f6','#10b981'];
 const BANK_COLORS   = ['#10b981','#3b82f6','#8b5cf6','#f59e0b','#ec4899','#06b6d4','#f97316','#6b7280'];
 const CAR_CATS      = ['Combustível','Manutenção','IPVA','Seguro','Multa','Estacionamento','Outros'];
@@ -725,8 +720,37 @@ function mkDefault() {
     assets: [],
     auditLog: [],
     achievements: [],
-    carSetup: { kmPerLiter: 10, fuelPrice: 6.0 }
+    carSetup: { kmPerLiter: 10, fuelPrice: 6.0, type: 'combustao' },
+    sprint: sprintDefaults()
   };
+}
+
+// ── Datas locais do Modo Sprint ─────────────────────────────
+// "Dia operacional": o dia vira às 04:00 (igual ao relatório da Uber).
+function localDateStr(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function opDate(now) { now=now||new Date(); return localDateStr(new Date(now.getTime()-4*3600000)); }
+function addDaysStr(ds,n) { const d=new Date(ds+'T12:00:00'); d.setDate(d.getDate()+n); return localDateStr(d); }
+function mondayOf(ds) { const d=new Date(ds+'T12:00:00'); d.setDate(d.getDate()-((d.getDay()+6)%7)); return localDateStr(d); }
+function daysBetween(a,b) { return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000); }
+
+function sprintDefaults() {
+  return {
+    enabled: true, startDate: mondayOf(opDate()), weeks: 16,
+    rentWeekly: 1300, cautionWeekly: 300, cautionWeeks: 15,
+    kmLimitWeekly: 2250, minRevPerKm: 1.55,
+    weeklyFloor: 2080, weeklyTarget: 3500, monthlyBankFloor: 9000,
+    leads: [], days: {}
+  };
+}
+// Só ADICIONA campos que faltam — nunca altera/remove dados existentes.
+function normalizeNewFields(m) {
+  const def=sprintDefaults();
+  if(!m.sprint || typeof m.sprint!=='object' || Array.isArray(m.sprint)) m.sprint=def;
+  else Object.keys(def).forEach(k=>{ if(m.sprint[k]===undefined || m.sprint[k]===null) m.sprint[k]=def[k]; });
+  if(!Array.isArray(m.sprint.leads)) m.sprint.leads=[];
+  if(!m.sprint.days || typeof m.sprint.days!=='object' || Array.isArray(m.sprint.days)) m.sprint.days={};
+  if(!m.carSetup.type) m.carSetup.type='combustao';
+  return m;
 }
 
 function loadDb() {
@@ -745,7 +769,7 @@ function loadDb() {
     if (!Array.isArray(merged.assets)) merged.assets = [];
     if (!Array.isArray(merged.auditLog)) merged.auditLog = [];
     if (!Array.isArray(merged.achievements)) merged.achievements = [];
-    return merged;
+    return normalizeNewFields(merged);
   } catch { return mkDefault(); }
 }
 
@@ -758,61 +782,11 @@ let subTab         = { renda: 'lancamentos', gastos: 'contas', banco: 'contas', 
 let resChart       = null;
 let amortChart     = null;
 let currentAuditWeek = '';
-let roomMode       = 'new';
 
 // ============================================================
-// SUPABASE
+// ARMAZENAMENTO (só no aparelho)
 // ============================================================
-let sb        = null;
-let roomCode  = localStorage.getItem(ROOM_KEY) || null;
-let roomToken = localStorage.getItem(ROOM_TOKEN_KEY) || null;
-let syncTimer = null;
-let isPushing = false;
-let realtimeCh= null;
-
-function initSupabase() {
-  if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) return false;
-  try { sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY); return true; }
-  catch(e) { console.error('Supabase init error:', e); return false; }
-}
-
-function setSyncStatus(status) {
-  const dot = document.getElementById('sync-dot');
-  const lbl = document.getElementById('sync-label');
-  const area= document.getElementById('sync-area');
-  if (!dot) return;
-  dot.classList.remove('sync-pulsing');
-  if (status==='ok')      { dot.style.background='#34d399'; lbl.textContent='Sincronizado'; area.style.display='flex'; }
-  else if (status==='syncing') { dot.style.background='#fbbf24'; lbl.textContent='Sincronizando'; dot.classList.add('sync-pulsing'); area.style.display='flex'; }
-  else if (status==='error')   { dot.style.background='#f87171'; lbl.textContent='Erro sync'; area.style.display='flex'; }
-  else { area.style.display='none'; }
-}
-
-async function pushToSupabase() {
-  if (!sb || !roomCode || !roomToken) return;
-  isPushing = true; setSyncStatus('syncing');
-  try {
-    const { error } = await sb.rpc('rpc_update_room', { p_code: roomCode, p_token: roomToken, p_data: db });
-    if (error) throw error;
-    setSyncStatus('ok');
-  } catch(e) { setSyncStatus('error'); console.error('Sync error:', e); }
-  setTimeout(() => { isPushing = false; }, 1500);
-}
-
 function saveLocalOnly() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
-
-function subscribeToRoom(code) {
-  if (!sb) return;
-  if (realtimeCh) { sb.removeChannel(realtimeCh); realtimeCh = null; }
-  realtimeCh = sb.channel('room:' + code)
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'room_data', filter: `room_code=eq.${code}` }, payload => {
-      if (isPushing || !payload.new?.data) return;
-      if (JSON.stringify(payload.new.data) === JSON.stringify(db)) return;
-      db = loadMerge(payload.new.data);
-      saveLocalOnly(); renderSection(currentSection); updateHeader(); setSyncStatus('ok');
-    })
-    .subscribe(s => { if (s === 'SUBSCRIBED') setSyncStatus('ok'); });
-}
 
 function loadMerge(data) {
   const merged = Object.assign(mkDefault(), data);
@@ -825,18 +799,7 @@ function loadMerge(data) {
   if (!Array.isArray(merged.assets)) merged.assets = [];
   if (!Array.isArray(merged.auditLog)) merged.auditLog = [];
   if (!Array.isArray(merged.achievements)) merged.achievements = [];
-  return merged;
-}
-
-async function loadRoomAndSubscribe(code) {
-  if (!sb) return false;
-  setSyncStatus('syncing');
-  try {
-    const { data, error } = await sb.from('room_data').select('data').eq('room_code', code).maybeSingle();
-    if (error) throw error;
-    if (data?.data) { db = loadMerge(data.data); saveLocalOnly(); }
-    subscribeToRoom(code); return true;
-  } catch(e) { setSyncStatus('error'); console.error('Load room error:', e); return false; }
+  return normalizeNewFields(merged);
 }
 
 // ============================================================
@@ -864,13 +827,19 @@ function bankTotal() { return db.bankAccounts.reduce((s,b)=>s+b.balance,0); }
 function costsInMonth(ym, type) { return db.costs.filter(c=>c.date.startsWith(ym)&&(!type||c.type===type)); }
 function costsTotal(ym, type) { return costsInMonth(ym,type).reduce((s,c)=>s+c.amount,0); }
 function kmInDay(d) { return db.kmLog.filter(k=>k.date===d).reduce((s,k)=>s+k.km,0); }
+function isElectric() { return db.carSetup?.type==='eletrico'; }
+function carUnits(type) {
+  const el=(type||db.carSetup?.type)==='eletrico';
+  return el ? {cons:'km/kWh', price:'R$/kWh', unit:'kWh', energy:'Energia'} : {cons:'km/L', price:'R$/L', unit:'L', energy:'Combustível'};
+}
 function fuelCostForKm(km) {
-  const real=realKmPerLiter();
+  // Elétrico: usa sempre o consumo configurado (o "consumo real" vem de abastecimentos de combustível)
+  const real=isElectric()?null:realKmPerLiter();
   const kmL=real||db.carSetup.kmPerLiter;
   const fuelPrice=db.carSetup.fuelPrice;
   return kmL>0?(km/kmL)*fuelPrice:0;
 }
-function effectiveKmPerLiter() { return realKmPerLiter()||db.carSetup.kmPerLiter; }
+function effectiveKmPerLiter() { return (isElectric()?null:realKmPerLiter())||db.carSetup.kmPerLiter; }
 
 // ============================================================
 // 🏆 ACHIEVEMENTS, STREAKS & TOAST
@@ -1057,8 +1026,6 @@ function registerSW() {
     navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW falhou:',e));
   }
 }
-function generateCode() { const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
-function generateToken() { const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:12},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
 
 // ── Week helpers ────────────────────────────────────────────
 function getSunday(dateStr) {
@@ -1165,11 +1132,6 @@ document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e
 // ============================================================
 function saveDb() {
   saveLocalOnly();
-  if (sb && roomCode && roomToken) {
-    clearTimeout(syncTimer);
-    syncTimer = setTimeout(pushToSupabase, 800);
-    setSyncStatus('syncing');
-  }
 }
 
 // ============================================================
@@ -1177,8 +1139,8 @@ function saveDb() {
 // ============================================================
 function setIncType(t) {
   incType = t;
-  ['uber','sal','com'].forEach(k => document.getElementById('inc-btn-'+k)?.classList.remove('active'));
-  const map = {uber:'inc-btn-uber', salario:'inc-btn-sal', comissao:'inc-btn-com'};
+  ['uber','99','sal','com'].forEach(k => document.getElementById('inc-btn-'+k)?.classList.remove('active'));
+  const map = {uber:'inc-btn-uber', '99':'inc-btn-99', salario:'inc-btn-sal', comissao:'inc-btn-com'};
   document.getElementById(map[t])?.classList.add('active');
   // Toggle holerite + cliente fields
   const holToggle=document.getElementById('inc-holerite-toggle');
@@ -1284,15 +1246,19 @@ function addIncome() {
     breakdown.liquido=Math.max(0,breakdown.bruto-breakdown.totalDescontos);
     if(breakdown.bruto>0) entry.breakdown=breakdown;
   }
+  recordIncome(entry);
+  saveDb(); closeModal('modal-renda'); renderSection(currentSection);
+}
+// Grava um lançamento de renda (usado pelo modal de Renda e pelo "Fechar o dia")
+function recordIncome(entry) {
   db.income.push(entry);
   // Auto-crédito no saldo bancário
-  if(autoCredit) {
-    const ba=db.bankAccounts.find(b=>b.id===bankAccountId);
-    if(ba) ba.balance=(ba.balance||0)+amount;
+  if(entry.autoCredit && entry.bankAccountId) {
+    const ba=db.bankAccounts.find(b=>b.id===entry.bankAccountId);
+    if(ba) ba.balance=(ba.balance||0)+entry.amount;
   }
   // Atualiza achievements/streak silenciosamente
   checkAchievements();
-  saveDb(); closeModal('modal-renda'); renderSection(currentSection);
 }
 function deleteIncome(id) {
   if(!confirm('Remover este lançamento?')) return;
@@ -1958,8 +1924,9 @@ function updateKmPreview() {
   const fuel=fuelCostForKm(km);
   const el=document.getElementById('km-fuel-preview');
   const kmL=effectiveKmPerLiter();
-  const kmLLabel=realKmPerLiter()?` (real ${kmL.toFixed(2)}km/L)`:` (config ${kmL}km/L)`;
-  if(km>0) el.textContent=`⛽ Estimativa: ${fmt(fuel)} para ${km} km${kmLLabel} × R$ ${db.carSetup.fuelPrice}/L`;
+  const u=carUnits();
+  const kmLLabel=(!isElectric()&&realKmPerLiter())?` (real ${kmL.toFixed(2)}${u.cons})`:` (config ${kmL}${u.cons})`;
+  if(km>0) el.textContent=`${isElectric()?'🔌':'⛽'} Estimativa: ${fmt(fuel)} para ${km} km${kmLLabel} × R$ ${db.carSetup.fuelPrice}/${u.unit}`;
   else if(odo>0) el.textContent=`Leitura: ${odo.toLocaleString('pt-BR')} km. Sem leitura anterior — não é possível calcular consumo ainda.`;
   else el.textContent='Digite a leitura do odômetro para registrar.';
 }
@@ -1974,21 +1941,36 @@ function saveKm() {
     const last=lastOdometerReading();
     if(last && odo>last.km) km=odo-last.km;
   }
+  recordKm(date, odo, km);
+  saveDb(); closeModal('modal-km'); renderSection(currentSection);
+}
+// Grava a leitura do dia no kmLog (usado pelo modal Odômetro e pelo "Fechar o dia")
+function recordKm(date, odo, km) {
   db.kmLog=db.kmLog.filter(k=>k.date!==date);
   const entry={id:uid(),date,km:km||0};
   if(odo>0) entry.odometerKm=odo;
   db.kmLog.push(entry);
   checkAchievements();
-  saveDb(); closeModal('modal-km'); renderSection(currentSection);
 }
 
 // ============================================================
 // CAR SETUP
 // ============================================================
+let carSetupType='combustao';
+function setCarType(t) {
+  carSetupType=t==='eletrico'?'eletrico':'combustao';
+  ['combustao','eletrico'].forEach(k=>document.getElementById('car-type-'+k)?.classList.toggle('active',k===carSetupType));
+  const el=carSetupType==='eletrico';
+  document.getElementById('car-kml-label').textContent=el?'Consumo (km por kWh)':'Consumo (km por litro)';
+  document.getElementById('car-price-label').textContent=el?'Preço da energia (R$ por kWh)':'Preço do Combustível (R$/litro)';
+  document.getElementById('car-kml').placeholder=el?'Ex: 7.4':'Ex: 10';
+  document.getElementById('car-price').placeholder=el?'Ex: 1.15':'Ex: 6.00';
+  updateCarSetupPreview();
+}
 function openCarSetupModal() {
   document.getElementById('car-kml').value=db.carSetup.kmPerLiter;
   document.getElementById('car-price').value=db.carSetup.fuelPrice;
-  updateCarSetupPreview();
+  setCarType(db.carSetup.type);
   openModal('modal-car-setup');
 }
 function updateCarSetupPreview() {
@@ -2000,7 +1982,8 @@ document.addEventListener('input', e => { if(e.target.id==='car-kml'||e.target.i
 function saveCarSetup() {
   const kmPerLiter=parseFloat(document.getElementById('car-kml').value)||10;
   const fuelPrice=parseFloat(document.getElementById('car-price').value)||6;
-  db.carSetup={kmPerLiter,fuelPrice};
+  // Preserva outros campos de carSetup; só atualiza os editados aqui
+  db.carSetup=Object.assign({}, db.carSetup, {kmPerLiter, fuelPrice, type:carSetupType});
   saveDb(); closeModal('modal-car-setup'); renderSection(currentSection);
 }
 
@@ -2022,27 +2005,46 @@ function saveGoals() {
 function openConfigModal() {
   document.getElementById('cfg-name').value=db.profile.name||'';
   document.getElementById('cfg-spouse').value=db.profile.spouse||'';
+  fillSprintConfig();
   updateNotifUI();
-  const info=document.getElementById('cfg-room-info');
-  const conn=document.getElementById('cfg-room-connect');
-  if(roomCode){
-    info.style.display='block';conn.style.display='none';
-    document.getElementById('cfg-room-code').textContent=roomCode;
-    const pinEl=document.getElementById('cfg-room-pin');
-    if(pinEl) pinEl.textContent=roomToken?'•'.repeat(roomToken.length):'••••';
-  } else if(sb){info.style.display='none';conn.style.display='block';}
-  else{info.style.display='none';conn.style.display='none';}
+  updateBackupInfo();
   openModal('modal-config');
 }
 function saveConfig() {
   db.profile.name=document.getElementById('cfg-name').value.trim();
   db.profile.spouse=document.getElementById('cfg-spouse').value.trim();
-  saveDb(); closeModal('modal-config'); updateHeader();
+  readSprintConfig();
+  saveDb(); closeModal('modal-config'); updateHeader(); renderSection(currentSection);
 }
-function exportData() {
-  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
-  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'financeiro_'+todayStr()+'.json'});
-  a.click(); URL.revokeObjectURL(a.href);
+// Data/hora do último backup (chave nova e separada; não mexe no db)
+const BACKUP_KEY='finance_uber_last_backup';
+function lastBackupAt() { try { return localStorage.getItem(BACKUP_KEY); } catch { return null; } }
+function daysSinceBackup() { const t=lastBackupAt(); return t?Math.floor((Date.now()-new Date(t).getTime())/86400000):null; }
+function markBackupDone() { try { localStorage.setItem(BACKUP_KEY,new Date().toISOString()); } catch {} }
+function updateBackupInfo() {
+  const el=document.getElementById('backup-info'); if(!el) return;
+  const d=daysSinceBackup();
+  if(d===null) { el.textContent='⚠️ Nenhum backup feito ainda'; el.style.color='#dc2626'; }
+  else { el.textContent=`✅ Último backup: ${d===0?'hoje':d===1?'ontem':'há '+d+' dias'}`; el.style.color=d>7?'#d97706':'#059669'; }
+}
+async function exportData() {
+  const name='financeiro_'+opDate()+'.json';
+  const json=JSON.stringify(db,null,2);
+  // No celular: abre o menu de compartilhar (Salvar em Arquivos, Drive, WhatsApp...)
+  try {
+    const file=new File([json],name,{type:'application/json'});
+    if(navigator.canShare && navigator.canShare({files:[file]})) {
+      await navigator.share({files:[file],title:'Backup FinanceUber'});
+      markBackupDone(); updateBackupInfo(); renderSection(currentSection);
+      flashToast('💾 Backup salvo!','#059669');
+      return;
+    }
+  } catch(e) { if(e && e.name==='AbortError') return; /* cancelou: não marca */ }
+  // Computador / navegador sem compartilhamento: baixa o arquivo
+  const blob=new Blob([json],{type:'application/json'});
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:name});
+  a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  markBackupDone(); updateBackupInfo(); renderSection(currentSection);
 }
 function importData(e) {
   const file=e.target.files[0]; if(!file) return;
@@ -2055,97 +2057,371 @@ function confirmClear() {
 }
 
 // ============================================================
-// SALA FAMILIAR (código + PIN)
-// ============================================================
-function openRoomPanel() { openModal('modal-room'); setRoomMode('new'); }
-function setRoomMode(mode) {
-  roomMode=mode;
-  document.getElementById('room-btn-new').classList.toggle('active',mode==='new');
-  document.getElementById('room-btn-join').classList.toggle('active',mode==='join');
-  document.getElementById('room-new-section').style.display=mode==='new'?'block':'none';
-  document.getElementById('room-join-section').style.display=mode==='join'?'block':'none';
-}
-function copyCurrentRoomCode() {
-  if(!roomCode) return;
-  const pin = roomToken||'(PIN salvo localmente)';
-  const msg = 'Código da sala: '+roomCode+'\nPIN de acesso: '+pin+'\n\nAcesse fin.marcotulio.pro → Sala Familiar → Entrar';
-  navigator.clipboard?.writeText(msg)
-    .then(()=>alert('✅ Copiado! Cole no WhatsApp:\n\n'+msg))
-    .catch(()=>alert('Copie e envie para seu cônjuge:\n\n'+msg));
-}
-function roomSetupError(msg) {
-  if(!msg) return '';
-  if(msg.includes('schema cache')||msg.includes('Could not find')) {
-    return 'Função RPC não encontrada no Supabase.\n\n📋 Para corrigir:\n1. Acesse supabase.com → seu projeto\n2. Clique em SQL Editor → New Query\n3. Cole o conteúdo do arquivo supabase-setup.sql\n4. Clique em Run\n5. Tente criar a sala novamente.';
-  }
-  if(msg.includes('já existe')||msg.includes('already exists')) return 'Já existe uma sala com este código. Escolha outro.';
-  return msg;
-}
-async function createRoom() {
-  if(!sb) return alert('Supabase não configurado.');
-  const code = (document.getElementById('room-new-code').value||'').trim().toUpperCase();
-  const pin  = (document.getElementById('room-new-pin').value||'').trim();
-  const pin2 = (document.getElementById('room-new-pin2').value||'').trim();
-  if(code.length<3) return alert('O código da sala deve ter pelo menos 3 caracteres.\nEx: MARCO ou FAMILIA');
-  if(pin.length<4)  return alert('O PIN deve ter pelo menos 4 dígitos.');
-  if(!/^\d+$/.test(pin)) return alert('O PIN deve conter apenas números.');
-  if(pin!==pin2)    return alert('Os PINs não conferem. Verifique e tente novamente.');
-  const btn=document.getElementById('room-create-btn');
-  btn.textContent='Criando...'; btn.disabled=true;
-  try {
-    const {error}=await sb.rpc('rpc_create_room',{p_code:code,p_token:pin,p_data:db});
-    if(error) throw new Error(roomSetupError(error.message));
-    roomCode=code; roomToken=pin;
-    localStorage.setItem(ROOM_KEY,code); localStorage.setItem(ROOM_TOKEN_KEY,pin);
-    subscribeToRoom(code); updateRoomBadge(); setSyncStatus('ok');
-    closeModal('modal-room');
-    alert('Sala criada! ✅\n\nEnvie para seu cônjuge pelo WhatsApp:\n\n🏠 Código: '+code+'\n🔑 PIN: '+pin+'\n\nEle(a) entra em: ⚙️ → Conectar Sala → Entrar');
-  } catch(e) { alert('Erro ao criar sala:\n\n'+(e.message||'Tente novamente.')); setSyncStatus('error'); }
-  btn.textContent='✅ Criar Sala'; btn.disabled=false;
-}
-async function joinRoom() {
-  if(!sb) return alert('Supabase não configurado.');
-  const code = (document.getElementById('room-join-code').value||'').trim().toUpperCase();
-  const pin  = (document.getElementById('room-join-pin').value||'').trim();
-  if(code.length<3) return alert('Digite o código da sala.');
-  if(pin.length<4)  return alert('Digite o PIN de acesso (mínimo 4 dígitos).');
-  setSyncStatus('syncing');
-  try {
-    const {data,error}=await sb.from('room_data').select('data').eq('room_code',code).maybeSingle();
-    if(error) throw error;
-    if(!data) return (setSyncStatus('error'), alert('Sala "'+code+'" não encontrada.\nVerifique o código e tente novamente.'));
-    const {data:valid,error:verr}=await sb.rpc('rpc_verify_token',{p_code:code,p_token:pin});
-    if(verr) throw new Error(roomSetupError(verr.message));
-    if(!valid) return (setSyncStatus('error'), alert('PIN incorreto.\nVerifique o PIN enviado pelo criador da sala.'));
-    if(!confirm('Entrar na sala "'+code+'"?\n\nOs dados da sala serão carregados no seu dispositivo.')) {setSyncStatus(roomCode?'ok':'offline');return;}
-    db=loadMerge(data.data); saveLocalOnly();
-    roomCode=code; roomToken=pin;
-    localStorage.setItem(ROOM_KEY,code); localStorage.setItem(ROOM_TOKEN_KEY,pin);
-    subscribeToRoom(code); closeModal('modal-room'); updateHeader(); renderSection(currentSection); updateRoomBadge(); setSyncStatus('ok');
-  } catch(e) { alert('Erro:\n\n'+(e.message||'Sala não encontrada.')); setSyncStatus('error'); }
-}
-function leaveRoom() {
-  if(!confirm('Sair da sala? Os dados locais serão mantidos.')) return;
-  if(realtimeCh){sb.removeChannel(realtimeCh);realtimeCh=null;}
-  roomCode=null; roomToken=null;
-  localStorage.removeItem(ROOM_KEY); localStorage.removeItem(ROOM_TOKEN_KEY);
-  updateRoomBadge(); setSyncStatus('offline'); closeModal('modal-config');
-}
-function updateRoomBadge() {
-  const btn=document.getElementById('btn-room');
-  const pinEl=document.getElementById('cfg-room-pin');
-  const codeEl=document.getElementById('cfg-room-code');
-  if(roomCode&&sb){
-    btn.style.display='block';
-    document.getElementById('room-badge-code').textContent=roomCode;
-    if(codeEl) codeEl.textContent=roomCode;
-    if(pinEl)  pinEl.textContent=roomToken?'•'.repeat(roomToken.length):'••••';
-  } else btn.style.display='none';
-}
-
-// ============================================================
 // RENDER
 // ============================================================
+// ============================================================
+// 🏁 MODO SPRINT — daily (abrir/fechar o dia), semana e leads
+// ============================================================
+const LEAD_SOURCES=[
+  {id:'uber',     label:'Dentro do Uber', emoji:'🚗'},
+  {id:'organico', label:'Orgânico',       emoji:'🌱'},
+  {id:'parceiro', label:'Lead parceiro',  emoji:'🤝'},
+  {id:'outros',   label:'Outros',         emoji:'✨'},
+];
+const SPRINT_CFG_FIELDS=['weeks','rentWeekly','cautionWeekly','cautionWeeks','kmLimitWeekly','minRevPerKm','weeklyFloor','weeklyTarget','monthlyBankFloor'];
+let sprintShowAll=false;
+let fecharDate=null;
+let fecharLeads={};
+
+function sprintOn() { return !!db.sprint?.enabled; }
+function fmtInt(n) { return Math.round(n||0).toLocaleString('pt-BR'); }
+function fmtDec(n) { return Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function weekdayLabel(ds) { const t=new Date(ds+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'short'}); return t.charAt(0).toUpperCase()+t.slice(1); }
+function numVal(id) { return parseFloat(document.getElementById(id)?.value)||0; }
+
+// Leituras de odômetro do carro do sprint (só a partir do início do sprint,
+// para não misturar com o carro anterior)
+function sprintOdoReadings() {
+  const from=db.sprint?.startDate||'0000-00-00';
+  const r=[];
+  (db.kmLog||[]).forEach(k=>{ if(k.odometerKm>0) r.push({date:k.date,km:k.odometerKm}); });
+  (db.costs||[]).forEach(c=>{ if(c.odometerKm>0) r.push({date:c.date,km:c.odometerKm}); });
+  Object.entries(db.sprint?.days||{}).forEach(([d,v])=>{
+    if(v?.odoStart>0) r.push({date:d,km:v.odoStart});
+    if(v?.odoEnd>0)   r.push({date:d,km:v.odoEnd});
+  });
+  return r.filter(x=>x.date>=from);
+}
+function lastOdoBefore(ds) {
+  const before=sprintOdoReadings().filter(x=>x.date<ds).map(x=>x.km);
+  return before.length?Math.max(...before):null;
+}
+// Km rodados no período = maior leitura do período − última leitura antes dele
+// (ou a primeira leitura do período, se não houver anterior)
+function odoKmBetween(ds,de) {
+  const inP=sprintOdoReadings().filter(x=>x.date>=ds&&x.date<=de).map(x=>x.km);
+  if(!inP.length) return 0;
+  const base=lastOdoBefore(ds);
+  return Math.max(0, Math.max(...inP)-(base!==null?base:Math.min(...inP)));
+}
+function sprintGross(ds,de) {
+  const r={uber:0,n99:0};
+  (db.income||[]).forEach(i=>{
+    if(i.date>=ds && i.date<=de) {
+      if(i.type==='uber') r.uber+=i.amount||0;
+      else if(i.type==='99') r.n99+=i.amount||0;
+    }
+  });
+  r.total=r.uber+r.n99;
+  return r;
+}
+function leadsBetween(ds,de) { return (db.sprint.leads||[]).filter(l=>l.date>=ds&&l.date<=de); }
+function leadCounts(list) {
+  const c={}; LEAD_SOURCES.forEach(s=>c[s.id]=0);
+  list.forEach(l=>{ if(c[l.source]!==undefined) c[l.source]++; });
+  return c;
+}
+function sumCounts(c) { return Object.values(c).reduce((s,n)=>s+n,0); }
+
+function sprintStats(today) {
+  const s=db.sprint; today=today||opDate();
+  const ws=mondayOf(today), we=addDaysStr(ws,6);
+  const start=mondayOf(s.startDate||ws);
+  const weekNum=Math.floor(daysBetween(start,ws)/7)+1;
+  const daysLeft=Math.max(1,daysBetween(today,we)+1);
+  const g=sprintGross(ws,we);
+  const km=odoKmBetween(ws,we);
+  const energy=fuelCostForKm(km);
+  const net=g.total-energy-(s.rentWeekly||0);
+  const hasCaution=weekNum>=1 && weekNum<=(s.cautionWeeks||0);
+  const ym=today.substring(0,7);
+  return {
+    today, ws, we, weekNum, daysLeft,
+    gross:g.total, uber:g.uber, n99:g.n99, km,
+    revPerKm: km>0?g.total/km:null, energy, net, hasCaution,
+    cashAfter: hasCaution?net-(s.cautionWeekly||0):null,
+    perDayToTarget: Math.max(0,(s.weeklyTarget||0)-g.total)/daysLeft,
+    kmPerDayLeft: Math.max(0,(s.kmLimitWeekly||0)-km)/daysLeft,
+    ym, monthGross: sprintGross(ym+'-01',ym+'-31').total,
+    leadsWeek: leadCounts(leadsBetween(ws,we)),
+    leadsToday: leadCounts(leadsBetween(today,today)),
+  };
+}
+function sprintDayStats(d) {
+  const g=sprintGross(d,d);
+  const day=db.sprint.days[d]||{};
+  const km=(day.odoEnd>0 && day.odoStart>0)?Math.max(0,day.odoEnd-day.odoStart):kmInDay(d);
+  return {...g, km, revPerKm: km>0?g.total/km:null, energy: fuelCostForKm(km), day};
+}
+
+// ── Render ─────────────────────────────────────────────────
+function sprintBar(pct,color) {
+  return `<div class="progress-bar" style="margin-top:4px;height:7px"><div class="progress-fill" style="width:${Math.min(100,Math.max(0,pct))}%;background:${color}"></div></div>`;
+}
+function sprintTile(label,value,sub,color,bg) {
+  return `<div style="background:${bg||'#f9fafb'};border-radius:10px;padding:10px">
+    <div style="font-size:11px;color:#6b7280">${label}</div>
+    <div style="font-size:18px;font-weight:700;color:${color||'#111827'};margin-top:2px">${value}</div>
+    ${sub?`<div style="font-size:10px;color:#9ca3af;margin-top:1px">${sub}</div>`:''}
+  </div>`;
+}
+const SPRINT_BTN="flex:1;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif";
+
+function renderSprintDashboard() {
+  const box=document.getElementById('dash-sprint'), full=document.getElementById('dash-full');
+  if(!box||!full) return;
+  if(!sprintOn()) { box.style.display='none'; box.innerHTML=''; full.style.display='block'; return; }
+  box.style.display='block';
+  full.style.display=sprintShowAll?'block':'none';
+
+  const s=db.sprint, st=sprintStats(), td=st.today, ds=sprintDayStats(td), day=ds.day;
+  const minRev=s.minRevPerKm||0;
+  const revColor=r=>r===null?'#9ca3af':(r>=minRev?'#059669':'#dc2626');
+  const leadsTodayTotal=sumCounts(st.leadsToday), leadsWeekTotal=sumCounts(st.leadsWeek);
+
+  // ── 1. Daily ──
+  let status, body, btn;
+  if(day.closedAt) {
+    status=`<span class="sbadge" style="background:#d1fae5;color:#065f46">Fechado ✓</span>`;
+    body=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      ${sprintTile('💰 Bruto do dia',fmt(ds.total),`Uber ${fmt(ds.uber)} · 99 ${fmt(ds.n99)}`,'#059669','#f0fdf4')}
+      ${sprintTile('🛣️ Km do dia',fmtInt(ds.km)+' km',`${carUnits().energy} ${fmt(ds.energy)}`,'#0369a1','#f0f9ff')}
+      ${sprintTile('📈 R$/km do dia',ds.revPerKm===null?'—':'R$ '+fmtDec(ds.revPerKm),`mínimo R$ ${fmtDec(minRev)}`,revColor(ds.revPerKm))}
+      ${sprintTile('🎯 Leads hoje',leadsTodayTotal,LEAD_SOURCES.filter(x=>st.leadsToday[x.id]).map(x=>x.emoji+' '+st.leadsToday[x.id]).join(' · ')||'nenhum','#7c3aed','#f5f3ff')}
+    </div>`;
+    btn=`<button onclick="openFecharDia()" style="${SPRINT_BTN};width:100%;background:#f3f4f6;color:#374151">✏️ Editar fechamento</button>`;
+  } else if(day.openedAt) {
+    status=`<span class="sbadge" style="background:#fef3c7;color:#92400e">Em andamento</span>`;
+    body=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      ${sprintTile('🎯 Meta de hoje',fmt(st.perDayToTarget),'para bater a meta da semana','#059669','#f0fdf4')}
+      ${sprintTile('🛣️ Km disponível hoje',fmtInt(st.kmPerDayLeft)+' km',`limite ${fmtInt(s.kmLimitWeekly)} km/sem.`,'#0369a1','#f0f9ff')}
+      ${sprintTile('🚦 Odômetro início',fmtInt(day.odoStart)+' km',day.batteryStart!=null?`🔋 ${day.batteryStart}%`:'')}
+      ${sprintTile('📈 R$/km mínimo','R$ '+fmtDec(minRev),'aceite corridas acima disso')}
+    </div>`;
+    btn=`<button onclick="openFecharDia()" style="${SPRINT_BTN};width:100%;background:#0f172a;color:white">🌙 Fechar o dia</button>`;
+  } else {
+    status=`<span class="sbadge" style="background:#f3f4f6;color:#6b7280">Não iniciado</span>`;
+    body=`<div style="font-size:13px;color:#6b7280;margin-bottom:10px;line-height:1.5">Meta de hoje: <strong style="color:#059669">${fmt(st.perDayToTarget)}</strong> · Km disponível: <strong style="color:#0369a1">${fmtInt(st.kmPerDayLeft)} km</strong></div>`;
+    btn=`<div style="display:flex;gap:8px">
+      <button onclick="openAbrirDia()" style="${SPRINT_BTN};background:#10b981;color:white">☀️ Abrir o dia</button>
+      <button onclick="openFecharDia()" style="${SPRINT_BTN};flex:0 0 auto;background:#0f172a;color:white">🌙 Fechar</button>
+    </div>`;
+  }
+  const dailyCard=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-weight:700;color:#111827;font-size:15px">📅 ${weekdayLabel(td)}</div>${status}
+    </div>${body}${btn}
+  </div>`;
+
+  // ── 2. Semana ──
+  let weekTitle;
+  if(st.weekNum<1) weekTitle=`🏁 Sprint começa em ${fmtDate(s.startDate)}`;
+  else if(st.weekNum>(s.weeks||16)) weekTitle=`🏁 Sprint concluído (${s.weeks} semanas)`;
+  else weekTitle=`🏁 Semana ${st.weekNum} de ${s.weeks}`;
+  const floorPct=s.weeklyFloor>0?st.gross/s.weeklyFloor*100:0;
+  const targetPct=s.weeklyTarget>0?st.gross/s.weeklyTarget*100:0;
+  const kmPct=s.kmLimitWeekly>0?st.km/s.kmLimitWeekly*100:0;
+  const kmColor=kmPct>=100?'#dc2626':kmPct>=80?'#f59e0b':'#0ea5e9';
+  const monthPct=s.monthlyBankFloor>0?st.monthGross/s.monthlyBankFloor*100:0;
+  const toTarget=Math.max(0,(s.weeklyTarget||0)-st.gross);
+  const weekCard=`<div class="card" id="sprint-week-card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+      <div style="font-weight:700;color:#111827;font-size:15px">${weekTitle}</div>
+      <div style="font-size:11px;color:#9ca3af">${fmtDate(st.ws)} – ${fmtDate(st.we)}</div>
+    </div>
+    <div style="font-size:11px;color:#6b7280">Bruto da semana</div>
+    <div class="big-amount" style="color:#059669" id="sp-gross">${fmt(st.gross)}</div>
+    <div style="font-size:12px;color:#6b7280">🚗 Uber ${fmt(st.uber)} · 🟡 99 ${fmt(st.n99)}</div>
+    <div style="margin-top:10px;font-size:11px;color:#6b7280;display:flex;justify-content:space-between"><span>Piso ${fmt(s.weeklyFloor)}</span><span>${Math.min(999,floorPct).toFixed(0)}%</span></div>
+    ${sprintBar(floorPct,floorPct>=100?'#059669':'#f59e0b')}
+    <div style="margin-top:8px;font-size:11px;color:#6b7280;display:flex;justify-content:space-between"><span>Meta ${fmt(s.weeklyTarget)}</span><span>${Math.min(999,targetPct).toFixed(0)}%</span></div>
+    ${sprintBar(targetPct,'linear-gradient(90deg,#10b981,#059669)')}
+    <div style="margin-top:10px;padding:10px;background:${toTarget>0?'#f0fdf4':'#d1fae5'};border-radius:10px;font-size:13px;color:#065f46" id="sp-perday">
+      ${toTarget>0?`Falta por dia para a meta: <strong>${fmt(st.perDayToTarget)}</strong> <span style="color:#6b7280">(${st.daysLeft} dia${st.daysLeft>1?'s':''})</span>`:'🎉 Meta da semana batida!'}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      <div style="background:#f9fafb;border-radius:10px;padding:10px">
+        <div style="font-size:11px;color:#6b7280">🛣️ Km da semana</div>
+        <div style="font-size:18px;font-weight:700;color:${kmColor}" id="sp-km">${fmtInt(st.km)} km</div>
+        ${sprintBar(kmPct,kmColor)}
+        <div style="font-size:10px;color:#9ca3af;margin-top:3px">de ${fmtInt(s.kmLimitWeekly)} km</div>
+      </div>
+      ${sprintTile('📈 R$/km', st.revPerKm===null?'—':'R$ '+fmtDec(st.revPerKm), `mínimo R$ ${fmtDec(minRev)}`, revColor(st.revPerKm)).replace('<div style="font-size:18px','<div id="sp-revkm" style="font-size:18px')}
+      ${sprintTile((isElectric()?'🔌 ':'⛽ ')+carUnits().energy+' da semana', fmt(st.energy), `${db.carSetup.kmPerLiter} ${carUnits().cons} · R$ ${db.carSetup.fuelPrice}/${carUnits().unit}`, '#ea580c').replace('<div style="font-size:18px','<div id="sp-energy" style="font-size:18px')}
+      ${sprintTile('💵 Líquido da semana', (st.net<0?'-':'')+fmt(Math.abs(st.net)), `bruto − ${carUnits().energy.toLowerCase()} − aluguel ${fmt(s.rentWeekly)}`, st.net>=0?'#059669':'#dc2626').replace('<div style="font-size:18px','<div id="sp-net" style="font-size:18px')}
+    </div>
+    ${st.hasCaution?`<div class="stat-row" style="margin-top:8px"><span style="color:#6b7280">🔐 Caixa após caução (−${fmt(s.cautionWeekly)})</span><span id="sp-cash" style="font-weight:700;color:${st.cashAfter>=0?'#059669':'#dc2626'}">${(st.cashAfter<0?'-':'')+fmt(Math.abs(st.cashAfter))}</span></div>`:''}
+    <div style="margin-top:10px;font-size:11px;color:#6b7280;display:flex;justify-content:space-between"><span>🏦 Bruto do mês ${fmt(st.monthGross)}</span><span>piso banco ${fmt(s.monthlyBankFloor)}</span></div>
+    ${sprintBar(monthPct,monthPct>=100?'#059669':'#6366f1')}
+  </div>`;
+
+  // ── 3. Leads ──
+  const leadsCard=`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+      <div style="font-weight:700;color:#111827;font-size:15px">🎯 Leads</div>
+      <div style="font-size:12px;color:#6b7280">hoje <strong style="color:#7c3aed">${leadsTodayTotal}</strong> · semana <strong style="color:#7c3aed" id="sp-leads-week">${leadsWeekTotal}</strong></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      ${LEAD_SOURCES.map(x=>`<button onclick="addLead('${x.id}')" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:10px;background:#f5f3ff;border:1px solid #ede9fe;border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif;text-align:left">
+        <span style="font-size:13px;font-weight:600;color:#5b21b6">+1 ${x.emoji} ${x.label}</span>
+        <span style="font-size:11px;color:#7c3aed;white-space:nowrap">${st.leadsToday[x.id]} / ${st.leadsWeek[x.id]}</span>
+      </button>`).join('')}
+    </div>
+    <div style="font-size:10px;color:#9ca3af;margin-top:6px;text-align:right">hoje / semana</div>
+  </div>`;
+
+  // ── 4. Atalhos + Ver tudo ──
+  const actions=`<div style="display:flex;gap:8px;margin-bottom:12px">
+      <button onclick="openKmModal()" style="${SPRINT_BTN};background:#e0f2fe;color:#0369a1">🛣️ Odômetro</button>
+      <button onclick="openIncomeModal()" style="${SPRINT_BTN};background:#d1fae5;color:#059669">💰 Renda</button>
+    </div>
+    <button onclick="toggleSprintShowAll()" style="width:100%;padding:10px;background:none;border:1.5px dashed #d1d5db;border-radius:12px;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:64px">${sprintShowAll?'▲ Ocultar o resto':'▼ Ver tudo (patrimônio, contas, conquistas…)'}</button>`;
+
+  box.innerHTML=dailyCard+weekCard+leadsCard+actions;
+}
+function toggleSprintShowAll() { sprintShowAll=!sprintShowAll; renderSprintDashboard(); }
+
+// ── Leads ──────────────────────────────────────────────────
+function addLead(source) {
+  db.sprint.leads.push({id:uid(), date:opDate(), source, at:new Date().toISOString()});
+  saveDb(); renderSection(currentSection);
+  const src=LEAD_SOURCES.find(x=>x.id===source);
+  flashToast(`🎯 +1 lead ${src?src.label:''}`,'#7c3aed');
+}
+function setLeadCount(d, source, n) {
+  const mine=db.sprint.leads.filter(l=>l.date===d && l.source===source);
+  if(mine.length<n) {
+    for(let i=mine.length;i<n;i++) db.sprint.leads.push({id:uid(), date:d, source, at:new Date().toISOString()});
+  } else if(mine.length>n) {
+    const drop=new Set(mine.sort((a,b)=>(b.at||'').localeCompare(a.at||'')).slice(0,mine.length-n).map(l=>l.id));
+    db.sprint.leads=db.sprint.leads.filter(l=>!drop.has(l.id));
+  }
+}
+
+// ── ☀️ Abrir o dia ─────────────────────────────────────────
+function openAbrirDia() {
+  const d=opDate(), st=sprintStats(d), s=db.sprint, day=s.days[d]||{};
+  document.getElementById('abrir-sub').textContent=`${weekdayLabel(d)} · Semana ${st.weekNum} de ${s.weeks}`;
+  const toTarget=Math.max(0,(s.weeklyTarget||0)-st.gross);
+  document.getElementById('abrir-plan').innerHTML=
+    `🎯 <strong>Meta de hoje: ${fmt(st.perDayToTarget)}</strong> <span style="color:#6b7280">(faltam ${fmt(toTarget)} em ${st.daysLeft} dia${st.daysLeft>1?'s':''})</span><br>`+
+    `🛣️ <strong>Km disponível hoje: ${fmtInt(st.kmPerDayLeft)} km</strong> <span style="color:#6b7280">(${fmtInt(st.km)} de ${fmtInt(s.kmLimitWeekly)} km usados)</span><br>`+
+    `📈 Aceite corridas que paguem <strong>≥ R$ ${fmtDec(s.minRevPerKm)}/km</strong>`;
+  const last=lastOdoBefore(addDaysStr(d,1));
+  document.getElementById('abrir-odo').value=day.odoStart||'';
+  document.getElementById('abrir-odo-hint').textContent=last!==null?`Última leitura: ${fmtInt(last)} km`:'Primeira leitura do sprint';
+  document.getElementById('abrir-bat').value=day.batteryStart!=null?day.batteryStart:'';
+  openModal('modal-abrir-dia');
+}
+function saveAbrirDia() {
+  const d=opDate();
+  const odo=numVal('abrir-odo');
+  const batRaw=document.getElementById('abrir-bat').value;
+  if(!odo) return alert('Digite o odômetro de agora.');
+  const last=lastOdoBefore(d);
+  if(last!==null && odo<last && !confirm(`O odômetro (${fmtInt(odo)}) está menor que a última leitura (${fmtInt(last)}). Salvar mesmo assim?`)) return;
+  const day=db.sprint.days[d]||{};
+  day.odoStart=odo;
+  if(batRaw!=='') day.batteryStart=Math.max(0,Math.min(100,parseFloat(batRaw)||0));
+  day.openedAt=new Date().toISOString();
+  db.sprint.days[d]=day;
+  saveDb(); closeModal('modal-abrir-dia'); renderSection(currentSection);
+  flashToast('☀️ Dia aberto! Bom trabalho.','#059669');
+}
+
+// ── 🌙 Fechar o dia ────────────────────────────────────────
+function fecharBaseline(d) {
+  const day=db.sprint.days[d]||{};
+  return day.odoStart>0?day.odoStart:lastOdoBefore(d);
+}
+function openFecharDia() {
+  const d=opDate(); fecharDate=d;
+  const day=db.sprint.days[d]||{};
+  document.getElementById('fechar-sub').textContent=weekdayLabel(d);
+  const todays=(db.income||[]).filter(i=>i.date===d && (i.type==='uber'||i.type==='99'));
+  const mine=todays.filter(i=>i.closeDay), other=todays.filter(i=>!i.closeDay);
+  const sum=(list,t)=>list.filter(i=>i.type===t).reduce((s,i)=>s+(i.amount||0),0);
+  document.getElementById('fechar-uber').value=sum(mine,'uber')||'';
+  document.getElementById('fechar-99').value=sum(mine,'99')||'';
+  const hint=document.getElementById('fechar-other-hint');
+  if(other.length) {
+    hint.style.display='block';
+    hint.innerHTML=`ℹ️ Já lançado hoje pelo botão Renda: Uber ${fmt(sum(other,'uber'))} · 99 ${fmt(sum(other,'99'))}. Esses valores <strong>já contam</strong>; aqui digite só o que faltar.`;
+  } else hint.style.display='none';
+  document.getElementById('fechar-odo').value=day.odoEnd||'';
+  const base=fecharBaseline(d);
+  document.getElementById('fechar-odo-hint').textContent=base!==null?(day.odoStart>0?`Início do dia: ${fmtInt(base)} km`:`Última leitura: ${fmtInt(base)} km`):'Primeira leitura do sprint';
+  fecharLeads=leadCounts(leadsBetween(d,d));
+  renderFecharLeads(); updateFecharPreview();
+  openModal('modal-fechar-dia');
+}
+function renderFecharLeads() {
+  const stepBtn="width:34px;height:34px;border-radius:50%;border:1.5px solid #ddd6fe;background:white;color:#7c3aed;font-size:18px;font-weight:700;cursor:pointer;line-height:1";
+  document.getElementById('fechar-leads').innerHTML=LEAD_SOURCES.map(x=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f3f4f6">
+    <div style="flex:1;font-size:14px;color:#374151">${x.emoji} ${x.label}</div>
+    <button type="button" onclick="stepLead('${x.id}',-1)" style="${stepBtn}">−</button>
+    <div style="width:28px;text-align:center;font-size:18px;font-weight:700;color:#5b21b6" id="fechar-lead-${x.id}">${fecharLeads[x.id]||0}</div>
+    <button type="button" onclick="stepLead('${x.id}',1)" style="${stepBtn}">+</button>
+  </div>`).join('');
+}
+function stepLead(source, delta) {
+  fecharLeads[source]=Math.max(0,(fecharLeads[source]||0)+delta);
+  renderFecharLeads(); updateFecharPreview();
+}
+function updateFecharPreview() {
+  const d=fecharDate||opDate();
+  const odo=numVal('fechar-odo'), uber=numVal('fechar-uber'), n99=numVal('fechar-99');
+  const other=(db.income||[]).filter(i=>i.date===d && !i.closeDay && (i.type==='uber'||i.type==='99')).reduce((s,i)=>s+(i.amount||0),0);
+  const base=fecharBaseline(d);
+  const km=(odo>0 && base!==null && odo>base)?odo-base:0;
+  const gross=uber+n99+other;
+  const rev=km>0?gross/km:null;
+  const min=db.sprint.minRevPerKm||0;
+  document.getElementById('fechar-preview').innerHTML=
+    `💰 Bruto do dia: <strong>${fmt(gross)}</strong><br>`+
+    `🛣️ Km do dia: <strong>${fmtInt(km)} km</strong> · ${carUnits().energy}: ${fmt(fuelCostForKm(km))}<br>`+
+    `📈 R$/km: <strong style="color:${rev===null?'#9ca3af':rev>=min?'#059669':'#dc2626'}">${rev===null?'—':'R$ '+fmtDec(rev)}</strong><br>`+
+    `🎯 Leads: <strong>${sumCounts(fecharLeads)}</strong>`;
+}
+function saveFecharDia() {
+  const d=fecharDate||opDate();
+  const odo=numVal('fechar-odo'), uber=numVal('fechar-uber'), n99=numVal('fechar-99');
+  const base=fecharBaseline(d);
+  if(odo>0 && base!==null && odo<base) return alert(`O odômetro (${fmtInt(odo)}) está menor que a leitura anterior (${fmtInt(base)}). Confira o valor.`);
+  const day=db.sprint.days[d]||{};
+  // Km → kmLog (mesma função do botão Odômetro)
+  if(odo>0) { recordKm(d, odo, (base!==null && odo>base)?odo-base:0); day.odoEnd=odo; }
+  // Renda → income (mesma função do modal de Renda). Refazer o fechamento substitui o anterior.
+  db.income=db.income.filter(i=>!(i.closeDay && i.date===d));
+  if(uber>0) recordIncome({id:uid(), type:'uber', amount:uber, date:d, note:'Fechar o dia', closeDay:true});
+  if(n99>0)  recordIncome({id:uid(), type:'99',   amount:n99,  date:d, note:'Fechar o dia', closeDay:true});
+  // Leads
+  LEAD_SOURCES.forEach(x=>setLeadCount(d, x.id, fecharLeads[x.id]||0));
+  day.closedAt=new Date().toISOString();
+  db.sprint.days[d]=day;
+  saveDb(); closeModal('modal-fechar-dia'); renderSection(currentSection);
+  const ds=sprintDayStats(d);
+  flashToast(`🌙 Dia fechado: ${fmt(ds.total)} · ${fmtInt(ds.km)} km`,'#0f172a');
+}
+
+// ── ⚙️ Configuração ────────────────────────────────────────
+function fillSprintConfig() {
+  const s=db.sprint;
+  document.getElementById('sp-enabled').checked=!!s.enabled;
+  document.getElementById('sp-startDate').value=s.startDate||'';
+  SPRINT_CFG_FIELDS.forEach(k=>{ const el=document.getElementById('sp-'+k); if(el) el.value=s[k]; });
+}
+function readSprintConfig() {
+  const s=db.sprint;
+  s.enabled=document.getElementById('sp-enabled').checked;
+  const sd=document.getElementById('sp-startDate').value;
+  if(sd) s.startDate=mondayOf(sd);
+  SPRINT_CFG_FIELDS.forEach(k=>{
+    const v=parseFloat(document.getElementById('sp-'+k)?.value);
+    if(!isNaN(v) && v>=0) s[k]=v;
+  });
+}
+
 function renderSection(name) {
   if(name==='dashboard') renderDashboard();
   else if(name==='renda') renderRenda();
@@ -2217,6 +2493,20 @@ function renderDashboard() {
   renderDashboardCarHealth();
   // ── Conquistas ───────────────────────────────────────
   renderDashboardAchievements();
+  // ── Modo Sprint ──────────────────────────────────────
+  renderSprintDashboard();
+  renderBackupNudge();
+}
+function renderBackupNudge() {
+  const el=document.getElementById('dash-backup'); if(!el) return;
+  const d=daysSinceBackup();
+  const hasData=(db.income||[]).length+(db.kmLog||[]).length+(db.bills||[]).length>0;
+  if(!hasData || (d!==null && d<7)) { el.innerHTML=''; return; }
+  el.innerHTML=`<div class="card" style="display:flex;align-items:center;gap:10px;background:#fffbeb;border:1.5px solid #fde68a">
+    <div style="font-size:22px">💾</div>
+    <div style="flex:1;font-size:12px;color:#92400e;line-height:1.4"><strong>${d===null?'Faça seu primeiro backup':'Último backup há '+d+' dias'}</strong><br>Seus dados ficam só neste celular.</div>
+    <button onclick="exportData()" style="padding:8px 12px;background:#f59e0b;color:white;border-radius:8px;font-size:12px;font-weight:700;font-family:'Inter',sans-serif;white-space:nowrap">Fazer backup</button>
+  </div>`;
 }
 
 function renderDashboardSuggestions() {
@@ -2299,7 +2589,7 @@ function renderDashboardStreaks() {
 function renderDashboardCarHealth() {
   const el=document.getElementById('dash-car-health'); if(!el) return;
   const last=lastOdometerReading();
-  const kmL=realKmPerLiter();
+  const kmL=isElectric()?null:realKmPerLiter();
   const veicFin=(db.financings||[]).find(f=>f.type==='veiculo');
   const veicAsset=(db.assets||[]).find(a=>a.type==='veiculo');
   const carName=veicFin?.name||veicAsset?.name||null;
@@ -2322,8 +2612,8 @@ function renderDashboardCarHealth() {
         ${last?`<div style="font-size:10px;opacity:.6;margin-top:1px">${fmtDate(last.date)}</div>`:''}
       </div>
       <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
-        <div style="font-size:10px;opacity:.7">⛽ Consumo</div>
-        <div style="font-size:18px;font-weight:700;margin-top:2px">${kmL?kmL.toFixed(1)+' km/L':db.carSetup.kmPerLiter+' km/L'}</div>
+        <div style="font-size:10px;opacity:.7">${isElectric()?'🔌':'⛽'} Consumo</div>
+        <div style="font-size:18px;font-weight:700;margin-top:2px">${kmL?kmL.toFixed(1)+' km/L':db.carSetup.kmPerLiter+' '+carUnits().cons}</div>
         <div style="font-size:10px;opacity:.6;margin-top:1px">${kmL?'real':'estimado'}</div>
       </div>
       ${veicFin?`<div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
@@ -2366,14 +2656,14 @@ function renderDashboardAchievements() {
 
 function renderRenda() {
   const ym=currentMonth;
-  const uberT=incomeTotal(ym,'uber'), salT=incomeTotal(ym,'salario'), comT=incomeTotal(ym,'comissao');
+  const uberT=incomeTotal(ym,'uber'), n99T=incomeTotal(ym,'99'), salT=incomeTotal(ym,'salario'), comT=incomeTotal(ym,'comissao');
   const pendRec=db.receivables.filter(r=>r.status==='pending').reduce((s,r)=>s+r.amount,0);
   let subContent='';
   if(subTab.renda==='lancamentos') {
     const entries=incomeInMonth(ym).sort((a,b)=>b.date.localeCompare(a.date));
-    const incIcons={uber:'🚗',salario:'👩',comissao:'🤝'};
-    const incColors={uber:'#d1fae5',salario:'#fce7f3',comissao:'#dbeafe'};
-    const incLabels={uber:'Uber',salario:spouseName(),comissao:'Comissão'};
+    const incIcons={uber:'🚗','99':'🟡',salario:'👩',comissao:'🤝'};
+    const incColors={uber:'#d1fae5','99':'#fef9c3',salario:'#fce7f3',comissao:'#dbeafe'};
+    const incLabels={uber:'Uber','99':'99',salario:spouseName(),comissao:'Comissão'};
     subContent=entries.length?entries.map(e=>{
       const ba=e.bankAccountId?db.bankAccounts.find(b=>b.id===e.bankAccountId):null;
       const bankBadge=ba?` <span style="font-size:10px;background:${ba.color}22;color:#374151;padding:1px 6px;border-radius:99px;margin-left:4px">→ ${ba.bank}</span>`:'';
@@ -2395,13 +2685,16 @@ function renderRenda() {
     <div class="month-nav"><button onclick="changeMonth(-1)">‹</button><div style="flex:1;text-align:center;font-weight:600;color:#111827">${monthLabel(ym)}</div><button onclick="changeMonth(1)">›</button></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div class="card" style="margin-bottom:0;background:#d1fae5"><div style="font-size:11px;color:#065f46;font-weight:500">🚗 Uber</div><div style="font-size:20px;font-weight:700;color:#059669;margin-top:4px">${fmt(uberT)}</div></div>
-      <div class="card" style="margin-bottom:0;background:#fce7f3"><div style="font-size:11px;color:#831843;font-weight:500">👩 ${spouseShort()}</div><div style="font-size:20px;font-weight:700;color:#be185d;margin-top:4px">${fmt(salT)}</div></div>
+      <div class="card" style="margin-bottom:0;background:#fef9c3"><div style="font-size:11px;color:#854d0e;font-weight:500">🟡 99</div><div style="font-size:20px;font-weight:700;color:#a16207;margin-top:4px">${fmt(n99T)}</div></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div class="card" style="margin-bottom:0;background:#fce7f3"><div style="font-size:11px;color:#831843;font-weight:500">👩 ${spouseShort()}</div><div style="font-size:20px;font-weight:700;color:#be185d;margin-top:4px">${fmt(salT)}</div></div>
       <div class="card" style="margin-bottom:0;background:#dbeafe"><div style="font-size:11px;color:#1e3a5f;font-weight:500">🤝 Comissões</div><div style="font-size:20px;font-weight:700;color:#2563eb;margin-top:4px">${fmt(comT)}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:12px">
       <div class="card" style="margin-bottom:0;background:#fef3c7"><div style="font-size:11px;color:#92400e;font-weight:500">⚠️ A Receber</div><div style="font-size:20px;font-weight:700;color:#d97706;margin-top:4px">${fmt(pendRec)}</div></div>
     </div>
-    <div class="card" style="background:#f0fdf4;border:1.5px solid #bbf7d0;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;color:#065f46;font-weight:600">Total do Mês</div><div style="font-size:22px;font-weight:800;color:#059669">${fmt(uberT+salT+comT)}</div></div></div>
+    <div class="card" style="background:#f0fdf4;border:1.5px solid #bbf7d0;margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:14px;color:#065f46;font-weight:600">Total do Mês</div><div style="font-size:22px;font-weight:800;color:#059669">${fmt(uberT+n99T+salT+comT)}</div></div></div>
     <div class="sub-tabs">
       <button class="sub-tab-btn ${subTab.renda==='lancamentos'?'active':''}" onclick="switchSubTab('renda','lancamentos')">Lançamentos</button>
       <button class="sub-tab-btn ${subTab.renda==='inadimplencias'?'active':''}" onclick="switchSubTab('renda','inadimplencias')">Inadimplências</button>
@@ -2425,7 +2718,7 @@ function renderGastos() {
   } else if(subTab.gastos==='carro') {
     const entries=costsInMonth(ym,'car').sort((a,b)=>b.date.localeCompare(a.date));
     const kmMes=db.kmLog.filter(k=>k.date.startsWith(ym)).reduce((s,k)=>s+k.km,0);
-    const setup=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:12px;color:#6b7280">Km este mês</div><div style="font-size:18px;font-weight:700;color:#374151">${kmMes} km</div></div><button onclick="openCarSetupModal()" style="background:#f3f4f6;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;color:#374151">⚙️ ${db.carSetup.kmPerLiter}km/L · R$${db.carSetup.fuelPrice}/L</button></div>`;
+    const setup=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:12px;color:#6b7280">Km este mês</div><div style="font-size:18px;font-weight:700;color:#374151">${kmMes} km</div></div><button onclick="openCarSetupModal()" style="background:#f3f4f6;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;color:#374151">⚙️ ${db.carSetup.kmPerLiter}${carUnits().cons} · R$${db.carSetup.fuelPrice}/${carUnits().unit}</button></div>`;
     subContent=setup+(entries.length?entries.map(c=>{
       const odomBadge=c.odometerKm?` <span style="font-size:10px;background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:99px">🛣️ ${c.odometerKm.toLocaleString('pt-BR')} km</span>`:'';
       const tankBadge=c.tankFull?` <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">🅕 Cheio</span>`:'';
@@ -2945,9 +3238,10 @@ function renderResumo() {
     // Income this week
     const wi=db.income.filter(i=>i.date>=ws&&i.date<=we);
     const uberW=wi.filter(i=>i.type==='uber').reduce((s,i)=>s+i.amount,0);
+    const n99W=wi.filter(i=>i.type==='99').reduce((s,i)=>s+i.amount,0);
     const salW=wi.filter(i=>i.type==='salario').reduce((s,i)=>s+i.amount,0);
     const comW=wi.filter(i=>i.type==='comissao').reduce((s,i)=>s+i.amount,0);
-    const rendaW=uberW+salW+comW;
+    const rendaW=uberW+n99W+salW+comW;
     // Costs this week
     const wc=db.costs.filter(c=>c.date>=ws&&c.date<=we);
     const carW=wc.filter(c=>c.type==='car').reduce((s,c)=>s+c.amount,0);
@@ -2999,6 +3293,7 @@ function renderResumo() {
         <div style="margin-bottom:10px">
           <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Renda</div>
           ${uberW>0?`<div class="stat-row"><span style="color:#6b7280">🚗 Uber</span><span style="font-weight:600;color:#059669">${fmt(uberW)}</span></div>`:''}
+          ${n99W>0?`<div class="stat-row"><span style="color:#6b7280">🟡 99</span><span style="font-weight:600;color:#a16207">${fmt(n99W)}</span></div>`:''}
           ${salW>0?`<div class="stat-row"><span style="color:#6b7280">👩 ${spouseShort()}</span><span style="font-weight:600;color:#be185d">${fmt(salW)}</span></div>`:''}
           ${comW>0?`<div class="stat-row"><span style="color:#6b7280">🤝 Comissões</span><span style="font-weight:600;color:#2563eb">${fmt(comW)}</span></div>`:''}
           ${rendaW===0?`<div style="font-size:13px;color:#9ca3af;padding:6px 0">Nenhuma renda registrada esta semana.</div>`:''}
@@ -3126,23 +3421,15 @@ function updateHeader() {
 document.getElementById('btn-config').addEventListener('click', openConfigModal);
 document.getElementById('btn-open-metas').addEventListener('click', openGoalsModal);
 
-async function init() {
+function init() {
   currentMonth=todayStr().substring(0,7);
   currentAuditWeek=getSunday(todayStr());
   registerSW();
   if(notificationsEnabled()) scheduleNotifications();
   updateHeader();
-  const hasSupa=initSupabase();
-  if(hasSupa&&roomCode) {
-    await loadRoomAndSubscribe(roomCode);
-    updateRoomBadge(); renderSection('dashboard');
-  } else if(hasSupa&&!roomCode) {
-    renderSection('dashboard'); updateRoomBadge();
-    if(!localStorage.getItem(DB_KEY)) setTimeout(()=>{openModal('modal-room');setRoomMode('new');},600);
-  } else {
-    setSyncStatus('offline'); renderSection('dashboard');
-    if(!localStorage.getItem(DB_KEY)) setTimeout(openGoalsModal,600);
-  }
+  renderSection('dashboard');
+  // Primeira vez: salva o padrão e abre a configuração do carro
+  if(!localStorage.getItem(DB_KEY)) { saveLocalOnly(); setTimeout(openCarSetupModal,600); }
 }
 
 init();

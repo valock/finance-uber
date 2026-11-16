@@ -293,7 +293,7 @@
     <h2>Índice</h2>
     <ol>
       <li><a href="#sec1">Visão Geral e Primeiros Passos</a></li>
-      <li><a href="#sec2">Sincronização com Jaqueline (Sala Compartilhada)</a></li>
+      <li><a href="#sec2">Backup e Uso em Dois Celulares</a></li>
       <li><a href="#sec3">Dashboard — Painel Principal</a></li>
       <li><a href="#sec4">Renda — Lançamentos e Metas</a></li>
       <li><a href="#sec5">Gastos — Contas, Dívidas, Custos Operacionais e Variáveis</a></li>
@@ -332,32 +332,28 @@
     <div class="step"><div class="step-num">1</div><div class="step-body">Acesse <strong>fin.marcotulio.pro</strong> no celular ou computador.</div></div>
     <div class="step"><div class="step-num">2</div><div class="step-body">Clique no ícone de engrenagem ⚙️ (canto superior direito) → configure seu nome e o nome da Jaqueline.</div></div>
     <div class="step"><div class="step-num">3</div><div class="step-body">Defina suas metas de renda: diária, semanal e mensal.</div></div>
-    <div class="step"><div class="step-num">4</div><div class="step-body">Crie a sala compartilhada (veja Seção 2) para sincronizar com a Jaqueline.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Faça o primeiro backup em ⚙️ → <strong>📤 Exportar</strong> (veja Seção 2).</div></div>
     <div class="step"><div class="step-num">5</div><div class="step-body">Comece a lançar sua renda do dia na aba <strong>Renda</strong>.</div></div>
 
-    <div class="tip"><strong>💡 Dica:</strong> Os dados são salvos no próprio celular (localStorage) e também sincronizados na nuvem via Supabase. Nunca feche o app sem sincronizar.</div>
+    <div class="tip"><strong>💡 Dica:</strong> Os dados ficam salvos só no próprio celular (funciona sem internet). Faça backup toda semana — o app avisa quando passar de 7 dias.</div>
   </section>
 
   <!-- SECTION 2 -->
   <section id="sec2">
-    <h2><span class="num">2</span>Sincronização com Jaqueline (Sala Compartilhada)</h2>
+    <h2><span class="num">2</span>Backup e Uso em Dois Celulares</h2>
 
-    <p>A sala compartilhada permite que você e a Jaqueline vejam e editem os dados em tempo real, de dispositivos diferentes.</p>
+    <p>O app guarda tudo no próprio celular — abre rápido e funciona sem internet. Não há sincronização automática na nuvem, então o backup é com você.</p>
 
-    <h3>Criar uma sala (você, uma única vez)</h3>
-    <div class="step"><div class="step-num">1</div><div class="step-body">Clique em ⚙️ → <strong>Criar Sala</strong></div></div>
-    <div class="step"><div class="step-num">2</div><div class="step-body">O app gera um código como: <code>ABC123-XXXXXXXXXXXX</code></div></div>
-    <div class="step"><div class="step-num">3</div><div class="step-body">Envie esse código completo para a Jaqueline pelo WhatsApp</div></div>
-    <div class="step"><div class="step-num">4</div><div class="step-body">Guarde o código — ele é a chave de acesso permanente</div></div>
+    <h3>Fazer backup (toda semana)</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body">Toque em ⚙️ → <strong>📤 Exportar</strong></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">No menu que abrir, escolha <strong>Salvar em Arquivos</strong>, Google Drive ou envie para você mesmo no WhatsApp</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">O Início mostra um aviso amarelo quando o último backup passar de 7 dias</div></div>
 
-    <h3>Entrar em uma sala existente (Jaqueline ou você em dispositivo novo)</h3>
-    <div class="step"><div class="step-num">1</div><div class="step-body">Clique em ⚙️ → <strong>Entrar em Sala</strong></div></div>
-    <div class="step"><div class="step-num">2</div><div class="step-body">Cole o código completo <code>ABC123-XXXXXXXXXXXX</code></div></div>
-    <div class="step"><div class="step-num">3</div><div class="step-body">Clique em Entrar — os dados são carregados automaticamente</div></div>
+    <h3>Restaurar ou passar os dados para outro celular</h3>
+    <div class="step"><div class="step-num">1</div><div class="step-body">No celular de origem: ⚙️ → <strong>📤 Exportar</strong> e envie o arquivo</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">No celular de destino: ⚙️ → <strong>📥 Importar</strong> e escolha o arquivo</div></div>
 
-    <div class="warn"><strong>⚠️ Atenção:</strong> Qualquer alteração feita por um dos dois aparece instantaneamente no celular do outro. Se ambos editarem ao mesmo tempo, quem salvar por último prevalece. Combinem um de cada vez.</div>
-
-    <div class="success"><strong>🔒 Segurança:</strong> O token de acesso é criptografado (SHA-256) no servidor. Ninguém que não tenha o código completo consegue acessar ou alterar seus dados.</div>
+    <div class="warn"><strong>⚠️ Atenção:</strong> Importar <strong>substitui</strong> todos os dados do celular de destino pelos do arquivo. Combinem quem lança o quê para não perder lançamentos.</div>
   </section>
 
   <!-- SECTION 3 -->
@@ -666,9 +662,9 @@
       <tr><th>Configuração</th><th>O que faz</th></tr>
       <tr><td>Nome / Cônjuge</td><td>Define o nome exibido no app</td></tr>
       <tr><td>Metas de Renda</td><td>Diária, semanal e mensal</td></tr>
-      <tr><td>Setup do Carro</td><td>Km por litro e preço do combustível (para cálculo de custo por km)</td></tr>
-      <tr><td>Sala Compartilhada</td><td>Criar ou entrar em sala com a Jaqueline</td></tr>
-      <tr><td>Importar CSV</td><td>Abre o importador de extrato bancário</td></tr>
+      <tr><td>Setup do Carro</td><td>Combustão (km/L e R$/L) ou Elétrico (km/kWh e R$/kWh), para o custo por km</td></tr>
+      <tr><td>Modo Sprint</td><td>Liga/desliga o Início simplificado e define aluguel, caução, limite de km, piso e meta</td></tr>
+            <tr><td>Importar CSV</td><td>Abre o importador de extrato bancário</td></tr>
       <tr><td>Exportar/Importar JSON</td><td>Backup e restauração de dados</td></tr>
     </table>
   </section>
@@ -744,18 +740,10 @@
       <li>Registre os bens quitados em <em>Balanço → Bens Próprios</em> — eles viram patrimônio puro</li>
     </ul>
 
-    <h3>Sobre a sincronização</h3>
+    <h3>Sobre o backup</h3>
     <ul>
-      <li>Sempre que fizer um lançamento importante, aguarde 2–3 segundos para garantir o envio ao servidor</li>
-      <li>Em caso de conflito (dois editando ao mesmo tempo), quem clicar "Salvar" por último ganha</li>
-      <li>Se os dados parecerem desatualizados, force a recarga da página (puxe para baixo no iPhone)</li>
-    </ul>
-
-    <h3>Sobre segurança</h3>
-    <ul>
-      <li>Nunca compartilhe o código de sala completo (<code>ABC123-XXXXXX</code>) em grupos ou redes sociais</li>
-      <li>Compartilhe apenas por mensagem privada para a Jaqueline</li>
-      <li>Se achar que o código foi comprometido, entre em ⚙️ e crie uma nova sala</li>
+      <li>Os dados ficam só neste celular: se o app for apagado ou o navegador limpar os dados do site, só o backup recupera</li>
+      <li>Guarde os arquivos de backup em mais de um lugar (Arquivos + Drive, por exemplo)</li>
     </ul>
 
     <div class="success">
@@ -763,7 +751,7 @@
       <ul style="margin-top:8px">
         <li>☐ Nome e cônjuge configurados</li>
         <li>☐ Metas de renda definidas</li>
-        <li>☐ Sala compartilhada criada e enviada para Jaqueline</li>
+        <li>☐ Primeiro backup feito (⚙️ → Exportar)</li>
         <li>☐ App instalado no iPhone (Safari → Adicionar à Tela de Início)</li>
         <li>☐ Contas fixas cadastradas</li>
         <li>☐ Dívidas ativas cadastradas</li>
