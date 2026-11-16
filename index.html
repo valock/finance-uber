@@ -535,8 +535,12 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
 <div class="modal" id="modal-car-setup">
   <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
     <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:18px">⚙️ Configurar Carro</h3>
-    <div class="form-group"><label class="form-label">Consumo (km por litro)</label><input type="number" inputmode="decimal" class="form-input" id="car-kml" placeholder="Ex: 10" step="0.1" min="1"></div>
-    <div class="form-group"><label class="form-label">Preço do Combustível (R$/litro)</label><input type="number" inputmode="decimal" class="form-input" id="car-price" placeholder="Ex: 6.00" step="0.01" min="0"></div>
+    <div class="type-switch">
+      <button class="type-btn active" id="car-type-combustao" onclick="setCarType('combustao')">⛽ Combustão</button>
+      <button class="type-btn" id="car-type-eletrico" onclick="setCarType('eletrico')">🔌 Elétrico</button>
+    </div>
+    <div class="form-group"><label class="form-label" id="car-kml-label">Consumo (km por litro)</label><input type="number" inputmode="decimal" class="form-input" id="car-kml" placeholder="Ex: 10" step="0.1" min="1"></div>
+    <div class="form-group"><label class="form-label" id="car-price-label">Preço do Combustível (R$/litro)</label><input type="number" inputmode="decimal" class="form-input" id="car-price" placeholder="Ex: 6.00" step="0.01" min="0"></div>
     <div id="car-cost-preview" style="background:#f0fdf4;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#065f46"></div>
     <button class="btn-primary" onclick="saveCarSetup()">Salvar</button>
     <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-car-setup')">Cancelar</button>
@@ -894,13 +898,19 @@ function bankTotal() { return db.bankAccounts.reduce((s,b)=>s+b.balance,0); }
 function costsInMonth(ym, type) { return db.costs.filter(c=>c.date.startsWith(ym)&&(!type||c.type===type)); }
 function costsTotal(ym, type) { return costsInMonth(ym,type).reduce((s,c)=>s+c.amount,0); }
 function kmInDay(d) { return db.kmLog.filter(k=>k.date===d).reduce((s,k)=>s+k.km,0); }
+function isElectric() { return db.carSetup?.type==='eletrico'; }
+function carUnits(type) {
+  const el=(type||db.carSetup?.type)==='eletrico';
+  return el ? {cons:'km/kWh', price:'R$/kWh', unit:'kWh', energy:'Energia'} : {cons:'km/L', price:'R$/L', unit:'L', energy:'Combustível'};
+}
 function fuelCostForKm(km) {
-  const real=realKmPerLiter();
+  // Elétrico: usa sempre o consumo configurado (o "consumo real" vem de abastecimentos de combustível)
+  const real=isElectric()?null:realKmPerLiter();
   const kmL=real||db.carSetup.kmPerLiter;
   const fuelPrice=db.carSetup.fuelPrice;
   return kmL>0?(km/kmL)*fuelPrice:0;
 }
-function effectiveKmPerLiter() { return realKmPerLiter()||db.carSetup.kmPerLiter; }
+function effectiveKmPerLiter() { return (isElectric()?null:realKmPerLiter())||db.carSetup.kmPerLiter; }
 
 // ============================================================
 // 🏆 ACHIEVEMENTS, STREAKS & TOAST
@@ -1992,8 +2002,9 @@ function updateKmPreview() {
   const fuel=fuelCostForKm(km);
   const el=document.getElementById('km-fuel-preview');
   const kmL=effectiveKmPerLiter();
-  const kmLLabel=realKmPerLiter()?` (real ${kmL.toFixed(2)}km/L)`:` (config ${kmL}km/L)`;
-  if(km>0) el.textContent=`⛽ Estimativa: ${fmt(fuel)} para ${km} km${kmLLabel} × R$ ${db.carSetup.fuelPrice}/L`;
+  const u=carUnits();
+  const kmLLabel=(!isElectric()&&realKmPerLiter())?` (real ${kmL.toFixed(2)}${u.cons})`:` (config ${kmL}${u.cons})`;
+  if(km>0) el.textContent=`${isElectric()?'🔌':'⛽'} Estimativa: ${fmt(fuel)} para ${km} km${kmLLabel} × R$ ${db.carSetup.fuelPrice}/${u.unit}`;
   else if(odo>0) el.textContent=`Leitura: ${odo.toLocaleString('pt-BR')} km. Sem leitura anterior — não é possível calcular consumo ainda.`;
   else el.textContent='Digite a leitura do odômetro para registrar.';
 }
@@ -2023,10 +2034,21 @@ function recordKm(date, odo, km) {
 // ============================================================
 // CAR SETUP
 // ============================================================
+let carSetupType='combustao';
+function setCarType(t) {
+  carSetupType=t==='eletrico'?'eletrico':'combustao';
+  ['combustao','eletrico'].forEach(k=>document.getElementById('car-type-'+k)?.classList.toggle('active',k===carSetupType));
+  const el=carSetupType==='eletrico';
+  document.getElementById('car-kml-label').textContent=el?'Consumo (km por kWh)':'Consumo (km por litro)';
+  document.getElementById('car-price-label').textContent=el?'Preço da energia (R$ por kWh)':'Preço do Combustível (R$/litro)';
+  document.getElementById('car-kml').placeholder=el?'Ex: 7.4':'Ex: 10';
+  document.getElementById('car-price').placeholder=el?'Ex: 1.15':'Ex: 6.00';
+  updateCarSetupPreview();
+}
 function openCarSetupModal() {
   document.getElementById('car-kml').value=db.carSetup.kmPerLiter;
   document.getElementById('car-price').value=db.carSetup.fuelPrice;
-  updateCarSetupPreview();
+  setCarType(db.carSetup.type);
   openModal('modal-car-setup');
 }
 function updateCarSetupPreview() {
@@ -2038,7 +2060,8 @@ document.addEventListener('input', e => { if(e.target.id==='car-kml'||e.target.i
 function saveCarSetup() {
   const kmPerLiter=parseFloat(document.getElementById('car-kml').value)||10;
   const fuelPrice=parseFloat(document.getElementById('car-price').value)||6;
-  db.carSetup={kmPerLiter,fuelPrice};
+  // Preserva outros campos de carSetup; só atualiza os editados aqui
+  db.carSetup=Object.assign({}, db.carSetup, {kmPerLiter, fuelPrice, type:carSetupType});
   saveDb(); closeModal('modal-car-setup'); renderSection(currentSection);
 }
 
@@ -2337,7 +2360,7 @@ function renderDashboardStreaks() {
 function renderDashboardCarHealth() {
   const el=document.getElementById('dash-car-health'); if(!el) return;
   const last=lastOdometerReading();
-  const kmL=realKmPerLiter();
+  const kmL=isElectric()?null:realKmPerLiter();
   const veicFin=(db.financings||[]).find(f=>f.type==='veiculo');
   const veicAsset=(db.assets||[]).find(a=>a.type==='veiculo');
   const carName=veicFin?.name||veicAsset?.name||null;
@@ -2360,8 +2383,8 @@ function renderDashboardCarHealth() {
         ${last?`<div style="font-size:10px;opacity:.6;margin-top:1px">${fmtDate(last.date)}</div>`:''}
       </div>
       <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
-        <div style="font-size:10px;opacity:.7">⛽ Consumo</div>
-        <div style="font-size:18px;font-weight:700;margin-top:2px">${kmL?kmL.toFixed(1)+' km/L':db.carSetup.kmPerLiter+' km/L'}</div>
+        <div style="font-size:10px;opacity:.7">${isElectric()?'🔌':'⛽'} Consumo</div>
+        <div style="font-size:18px;font-weight:700;margin-top:2px">${kmL?kmL.toFixed(1)+' km/L':db.carSetup.kmPerLiter+' '+carUnits().cons}</div>
         <div style="font-size:10px;opacity:.6;margin-top:1px">${kmL?'real':'estimado'}</div>
       </div>
       ${veicFin?`<div style="background:rgba(255,255,255,.1);border-radius:10px;padding:10px">
@@ -2466,7 +2489,7 @@ function renderGastos() {
   } else if(subTab.gastos==='carro') {
     const entries=costsInMonth(ym,'car').sort((a,b)=>b.date.localeCompare(a.date));
     const kmMes=db.kmLog.filter(k=>k.date.startsWith(ym)).reduce((s,k)=>s+k.km,0);
-    const setup=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:12px;color:#6b7280">Km este mês</div><div style="font-size:18px;font-weight:700;color:#374151">${kmMes} km</div></div><button onclick="openCarSetupModal()" style="background:#f3f4f6;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;color:#374151">⚙️ ${db.carSetup.kmPerLiter}km/L · R$${db.carSetup.fuelPrice}/L</button></div>`;
+    const setup=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div><div style="font-size:12px;color:#6b7280">Km este mês</div><div style="font-size:18px;font-weight:700;color:#374151">${kmMes} km</div></div><button onclick="openCarSetupModal()" style="background:#f3f4f6;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;color:#374151">⚙️ ${db.carSetup.kmPerLiter}${carUnits().cons} · R$${db.carSetup.fuelPrice}/${carUnits().unit}</button></div>`;
     subContent=setup+(entries.length?entries.map(c=>{
       const odomBadge=c.odometerKm?` <span style="font-size:10px;background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:99px">🛣️ ${c.odometerKm.toLocaleString('pt-BR')} km</span>`:'';
       const tankBadge=c.tankFull?` <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:99px">🅕 Cheio</span>`:'';
