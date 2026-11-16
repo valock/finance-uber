@@ -725,8 +725,37 @@ function mkDefault() {
     assets: [],
     auditLog: [],
     achievements: [],
-    carSetup: { kmPerLiter: 10, fuelPrice: 6.0 }
+    carSetup: { kmPerLiter: 10, fuelPrice: 6.0, type: 'combustao' },
+    sprint: sprintDefaults()
   };
+}
+
+// ── Datas locais do Modo Sprint ─────────────────────────────
+// "Dia operacional": o dia vira às 04:00 (igual ao relatório da Uber).
+function localDateStr(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function opDate(now) { now=now||new Date(); return localDateStr(new Date(now.getTime()-4*3600000)); }
+function addDaysStr(ds,n) { const d=new Date(ds+'T12:00:00'); d.setDate(d.getDate()+n); return localDateStr(d); }
+function mondayOf(ds) { const d=new Date(ds+'T12:00:00'); d.setDate(d.getDate()-((d.getDay()+6)%7)); return localDateStr(d); }
+function daysBetween(a,b) { return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000); }
+
+function sprintDefaults() {
+  return {
+    enabled: true, startDate: mondayOf(opDate()), weeks: 16,
+    rentWeekly: 1300, cautionWeekly: 300, cautionWeeks: 15,
+    kmLimitWeekly: 2250, minRevPerKm: 1.55,
+    weeklyFloor: 2080, weeklyTarget: 3500, monthlyBankFloor: 9000,
+    leads: [], days: {}
+  };
+}
+// Só ADICIONA campos que faltam — nunca altera/remove dados existentes.
+function normalizeNewFields(m) {
+  const def=sprintDefaults();
+  if(!m.sprint || typeof m.sprint!=='object' || Array.isArray(m.sprint)) m.sprint=def;
+  else Object.keys(def).forEach(k=>{ if(m.sprint[k]===undefined || m.sprint[k]===null) m.sprint[k]=def[k]; });
+  if(!Array.isArray(m.sprint.leads)) m.sprint.leads=[];
+  if(!m.sprint.days || typeof m.sprint.days!=='object' || Array.isArray(m.sprint.days)) m.sprint.days={};
+  if(!m.carSetup.type) m.carSetup.type='combustao';
+  return m;
 }
 
 function loadDb() {
@@ -745,7 +774,7 @@ function loadDb() {
     if (!Array.isArray(merged.assets)) merged.assets = [];
     if (!Array.isArray(merged.auditLog)) merged.auditLog = [];
     if (!Array.isArray(merged.achievements)) merged.achievements = [];
-    return merged;
+    return normalizeNewFields(merged);
   } catch { return mkDefault(); }
 }
 
@@ -825,7 +854,7 @@ function loadMerge(data) {
   if (!Array.isArray(merged.assets)) merged.assets = [];
   if (!Array.isArray(merged.auditLog)) merged.auditLog = [];
   if (!Array.isArray(merged.achievements)) merged.achievements = [];
-  return merged;
+  return normalizeNewFields(merged);
 }
 
 async function loadRoomAndSubscribe(code) {
@@ -1284,15 +1313,19 @@ function addIncome() {
     breakdown.liquido=Math.max(0,breakdown.bruto-breakdown.totalDescontos);
     if(breakdown.bruto>0) entry.breakdown=breakdown;
   }
+  recordIncome(entry);
+  saveDb(); closeModal('modal-renda'); renderSection(currentSection);
+}
+// Grava um lançamento de renda (usado pelo modal de Renda e pelo "Fechar o dia")
+function recordIncome(entry) {
   db.income.push(entry);
   // Auto-crédito no saldo bancário
-  if(autoCredit) {
-    const ba=db.bankAccounts.find(b=>b.id===bankAccountId);
-    if(ba) ba.balance=(ba.balance||0)+amount;
+  if(entry.autoCredit && entry.bankAccountId) {
+    const ba=db.bankAccounts.find(b=>b.id===entry.bankAccountId);
+    if(ba) ba.balance=(ba.balance||0)+entry.amount;
   }
   // Atualiza achievements/streak silenciosamente
   checkAchievements();
-  saveDb(); closeModal('modal-renda'); renderSection(currentSection);
 }
 function deleteIncome(id) {
   if(!confirm('Remover este lançamento?')) return;
@@ -1974,12 +2007,16 @@ function saveKm() {
     const last=lastOdometerReading();
     if(last && odo>last.km) km=odo-last.km;
   }
+  recordKm(date, odo, km);
+  saveDb(); closeModal('modal-km'); renderSection(currentSection);
+}
+// Grava a leitura do dia no kmLog (usado pelo modal Odômetro e pelo "Fechar o dia")
+function recordKm(date, odo, km) {
   db.kmLog=db.kmLog.filter(k=>k.date!==date);
   const entry={id:uid(),date,km:km||0};
   if(odo>0) entry.odometerKm=odo;
   db.kmLog.push(entry);
   checkAchievements();
-  saveDb(); closeModal('modal-km'); renderSection(currentSection);
 }
 
 // ============================================================
