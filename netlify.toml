@@ -1,9 +1,5 @@
 [build]
-  # Gera config.js a partir das variáveis de ambiente definidas no painel do Netlify
-  # Configure em: Site → Site configuration → Environment variables
-  #   SUPABASE_URL      = https://seu-projeto.supabase.co
-  #   SUPABASE_ANON_KEY = eyJ...sua_chave_anon
-  command = "node -e \"require('fs').writeFileSync('config.js', \\\"window.SUPABASE_URL='\\\" + process.env.SUPABASE_URL + \\\"';\\\\nwindow.SUPABASE_ANON_KEY='\\\" + process.env.SUPABASE_ANON_KEY + \\\"';\\\\n\\\");\""
+  # Site estático: sem etapa de build
   publish = "."
 
 [[headers]]
@@ -14,8 +10,8 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy       = "strict-origin-when-cross-origin"
 
-# config.js gerado pelo build nunca deve ser cacheado
+# O service worker precisa ser sempre buscado de novo para as atualizações chegarem
 [[headers]]
-  for = "/config.js"
+  for = "/sw.js"
   [headers.values]
-    Cache-Control = "no-store"
+    Cache-Control = "no-cache"
