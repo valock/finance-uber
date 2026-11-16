@@ -1,5 +1,5 @@
 // FinanceUber Service Worker — caching mínimo + notificações
-const CACHE_NAME = 'financeuber-v1';
+const CACHE_NAME = 'financeuber-v2';
 const CORE_ASSETS = [
   '/',
   '/index.html',
