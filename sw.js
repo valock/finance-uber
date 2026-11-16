@@ -1,10 +1,16 @@
-// FinanceUber Service Worker — caching mínimo + notificações
+// FinanceUber Service Worker — funciona offline + notificações
 const CACHE_NAME = 'financeuber-v2';
+const CHART_JS = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
 const CORE_ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  CHART_JS
 ];
+// Bibliotecas/fontes de fora que podem ficar em cache (versões fixas)
+const CDN_HOSTS = ['cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
   self.skipWaiting();
@@ -23,21 +29,37 @@ self.addEventListener('activate', e => {
   );
 });
 
+function putInCache(req, res) {
+  if (res && (res.ok || res.type === 'opaque')) {
+    const copy = res.clone();
+    caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+  }
+  return res;
+}
+
 self.addEventListener('fetch', e => {
-  // Network-first para HTML/JSON, cache-first para o resto
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  if (url.origin !== location.origin) return;
-  const isAsset = /\.(?:png|jpg|jpeg|svg|webp|woff2?|css|js)$/i.test(url.pathname);
+
+  // CDN (Chart.js, fonte Inter): cache primeiro
+  if (url.origin !== location.origin) {
+    if (!CDN_HOSTS.includes(url.hostname)) return;
+    e.respondWith(caches.match(req).then(c => c || fetch(req).then(r => putInCache(req, r))));
+    return;
+  }
+
+  const isAsset = /\.(?:png|jpg|jpeg|svg|webp|woff2?|css|js)$/i.test(url.pathname) && !url.pathname.endsWith('/sw.js');
   if (isAsset) {
-    e.respondWith(caches.match(req).then(c => c || fetch(req).then(r => {
-      const copy = r.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-      return r;
-    })));
+    // Arquivos estáticos: cache primeiro
+    e.respondWith(caches.match(req).then(c => c || fetch(req).then(r => putInCache(req, r))));
   } else {
-    e.respondWith(fetch(req).catch(() => caches.match(req)));
+    // Página/JSON: rede primeiro (sempre a versão mais nova), guarda cópia para usar offline
+    e.respondWith(
+      fetch(req).then(r => putInCache(req, r)).catch(() =>
+        caches.match(req, { ignoreSearch: true }).then(c => c || (req.mode === 'navigate' ? caches.match('/') : undefined))
+      )
+    );
   }
 });
 
