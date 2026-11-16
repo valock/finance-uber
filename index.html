@@ -2294,7 +2294,7 @@ let fecharLeads={};
 function sprintOn() { return !!db.sprint?.enabled; }
 function fmtInt(n) { return Math.round(n||0).toLocaleString('pt-BR'); }
 function fmtDec(n) { return Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function weekdayLabel(ds) { return new Date(ds+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'short'}); }
+function weekdayLabel(ds) { const t=new Date(ds+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'short'}); return t.charAt(0).toUpperCase()+t.slice(1); }
 function numVal(id) { return parseFloat(document.getElementById(id)?.value)||0; }
 
 // Leituras de odômetro do carro do sprint (só a partir do início do sprint,
@@ -2427,7 +2427,7 @@ function renderSprintDashboard() {
   }
   const dailyCard=`<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div style="font-weight:700;color:#111827;font-size:15px;text-transform:capitalize">📅 ${weekdayLabel(td)}</div>${status}
+      <div style="font-weight:700;color:#111827;font-size:15px">📅 ${weekdayLabel(td)}</div>${status}
     </div>${body}${btn}
   </div>`;
 
@@ -2493,7 +2493,7 @@ function renderSprintDashboard() {
       <button onclick="openKmModal()" style="${SPRINT_BTN};background:#e0f2fe;color:#0369a1">🛣️ Odômetro</button>
       <button onclick="openIncomeModal()" style="${SPRINT_BTN};background:#d1fae5;color:#059669">💰 Renda</button>
     </div>
-    <button onclick="toggleSprintShowAll()" style="width:100%;padding:10px;background:none;border:1.5px dashed #d1d5db;border-radius:12px;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:12px">${sprintShowAll?'▲ Ocultar o resto':'▼ Ver tudo (patrimônio, contas, conquistas…)'}</button>`;
+    <button onclick="toggleSprintShowAll()" style="width:100%;padding:10px;background:none;border:1.5px dashed #d1d5db;border-radius:12px;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:64px">${sprintShowAll?'▲ Ocultar o resto':'▼ Ver tudo (patrimônio, contas, conquistas…)'}</button>`;
 
   box.innerHTML=dailyCard+weekCard+leadsCard+actions;
 }
