@@ -1,5 +1,7 @@
 [build]
-  # Site estático: sem etapa de build
+  # Site estático. O comando abaixo substitui o "Build command" antigo do painel do Netlify,
+  # que ainda gerava config.js com a URL e a chave do Supabase (removido do app).
+  command = "rm -f config.js"
   publish = "."
 
 [[headers]]
