@@ -1,5 +1,5 @@
 // FinanceUber Service Worker — funciona offline + notificações
-const CACHE_NAME = 'financeuber-v2';
+const CACHE_NAME = 'financeuber-v3';
 const CHART_JS = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
 const CORE_ASSETS = [
   '/',
@@ -41,6 +41,9 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+
+  // API e conector: sempre direto na rede, nunca em cache (dados privados)
+  if (url.origin === location.origin && (url.pathname.startsWith('/api/') || url.pathname.startsWith('/mcp/'))) return;
 
   // CDN (Chart.js, fonte Inter): cache primeiro
   if (url.origin !== location.origin) {

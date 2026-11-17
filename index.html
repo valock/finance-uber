@@ -641,6 +641,10 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
     </div>
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid #f3f4f6">
+      <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🤖 Conectar ao Claude</div>
+      <div id="cloud-box"></div>
+    </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #f3f4f6">
       <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">🔔 Lembretes</div>
       <div id="notif-status" style="font-size:12px;color:#6b7280;margin-bottom:8px"></div>
       <button id="notif-btn" class="btn-secondary" style="width:100%;text-align:center" onclick="toggleNotifications()">🔔 Ativar lembretes diários</button>
@@ -1132,6 +1136,7 @@ document.querySelectorAll('.modal').forEach(m => { m.addEventListener('click', e
 // ============================================================
 function saveDb() {
   saveLocalOnly();
+  scheduleCloudPush(); // envia para o conector do Claude, se a conexão estiver ativa
 }
 
 // ============================================================
@@ -2008,6 +2013,7 @@ function openConfigModal() {
   fillSprintConfig();
   updateNotifUI();
   updateBackupInfo();
+  updateCloudUI();
   openModal('modal-config');
 }
 function saveConfig() {
@@ -2053,12 +2059,149 @@ function importData(e) {
   reader.readAsText(file); e.target.value='';
 }
 function confirmClear() {
-  if(confirm('Apagar TODOS os dados?')){db=mkDefault();saveDb();closeModal('modal-config');updateHeader();renderSection(currentSection);}
+  // Apaga só neste aparelho (a cópia do conector, se houver, não é sobrescrita por um banco vazio)
+  if(confirm('Apagar TODOS os dados deste celular?')){db=mkDefault();saveLocalOnly();closeModal('modal-config');updateHeader();renderSection(currentSection);}
 }
 
 // ============================================================
 // RENDER
 // ============================================================
+// ============================================================
+// 🤖 CONEXÃO COM O CLAUDE — envia os dados para o site (conector + cópia online)
+// ============================================================
+const CLOUD_KEY='finance_uber_cloud_key';         // chave principal (só neste aparelho)
+const CLOUD_LAST='finance_uber_cloud_last';       // data/hora do último envio que deu certo
+const CLOUD_PENDING='finance_uber_cloud_pending'; // '1' = há alteração ainda não enviada
+const CLOUD_STATUS='finance_uber_cloud_status';   // 'ok' | 'chave' (chave recusada)
+let cloudTimer=null, cloudBusy=false, cloudSeq=0;
+
+function lsGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function lsSet(k,v) { try { if(v===null) localStorage.removeItem(k); else localStorage.setItem(k,v); } catch {} }
+function cloudKey() { return lsGet(CLOUD_KEY); }
+async function sha256Hex(s) {
+  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function readKeyFrom(key) { return sha256Hex('leitura:'+key); } // mesma fórmula do servidor
+function randomKey() { const a=new Uint8Array(32); crypto.getRandomValues(a); return [...a].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+async function connectorUrl() { const k=cloudKey(); return k?location.origin+'/mcp/'+(await readKeyFrom(k)):''; }
+function agoLabel(iso) {
+  if(!iso) return '';
+  const m=Math.round((Date.now()-new Date(iso).getTime())/60000);
+  return m<1?'agora':m<60?`há ${m} min`:m<1440?`há ${Math.round(m/60)} h`:`há ${Math.round(m/1440)} dia(s)`;
+}
+
+// Chamado por saveDb(): agenda o envio (junta várias alterações seguidas em um envio só)
+function scheduleCloudPush() {
+  if(!cloudKey()) return;
+  cloudSeq++; lsSet(CLOUD_PENDING,'1');
+  clearTimeout(cloudTimer); cloudTimer=setTimeout(cloudPush,2000);
+}
+async function cloudPush() {
+  const key=cloudKey(); if(!key) return;
+  if(cloudBusy) { clearTimeout(cloudTimer); cloudTimer=setTimeout(cloudPush,1500); return; }
+  if(!navigator.onLine) { updateCloudUI(); return; } // envia quando a internet voltar
+  cloudBusy=true; const seq=cloudSeq;
+  try {
+    const r=await fetch('/api/sync',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({db,device:(navigator.userAgent||'').slice(0,60)})});
+    if(r.ok) {
+      const j=await r.json().catch(()=>({}));
+      lsSet(CLOUD_LAST,j.savedAt||new Date().toISOString()); lsSet(CLOUD_STATUS,'ok');
+      if(seq===cloudSeq) lsSet(CLOUD_PENDING,null); else { clearTimeout(cloudTimer); cloudTimer=setTimeout(cloudPush,1500); }
+    } else if(r.status===401) lsSet(CLOUD_STATUS,'chave');
+  } catch(e) { console.warn('Envio para o Claude falhou; tento de novo depois.',e); }
+  cloudBusy=false; updateCloudUI();
+}
+window.addEventListener('online',()=>{ if(lsGet(CLOUD_PENDING)==='1') cloudPush(); });
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden' && lsGet(CLOUD_PENDING)==='1') { clearTimeout(cloudTimer); cloudPush(); } });
+
+async function copyText(txt, okMsg) {
+  try { await navigator.clipboard.writeText(txt); flashToast(okMsg,'#059669'); }
+  catch { prompt('Copie o texto abaixo:',txt); }
+}
+async function copyConnectorLink() { await copyText(await connectorUrl(),'📋 Link do conector copiado!'); }
+function copyCloudKey() {
+  if(!confirm('Esta chave dá acesso total aos seus dados. Use só para conectar OUTRO celular seu. Copiar?')) return;
+  copyText(cloudKey(),'🔑 Chave copiada');
+}
+
+async function activateCloud() {
+  if(!navigator.onLine) return alert('Sem internet agora. Tente de novo quando estiver conectado.');
+  try {
+    const key=randomKey(), readKey=await readKeyFrom(key);
+    const r=await fetch('/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({keyHash:await sha256Hex(key),readHash:await sha256Hex(readKey)})});
+    if(r.status===409) return alert('A conexão já foi ativada antes, em outro celular.\n\nToque em "Já ativei em outro celular" e cole a chave de lá.');
+    if(!r.ok) return alert('Não consegui ativar agora. Tente de novo em instantes.');
+    lsSet(CLOUD_KEY,key); lsSet(CLOUD_STATUS,'ok');
+    cloudSeq++; lsSet(CLOUD_PENDING,'1'); await cloudPush();
+    flashToast('🤖 Conectado! Agora copie o link do conector.','#059669');
+  } catch(e) { alert('Não consegui ativar agora. Tente de novo em instantes.'); }
+  updateCloudUI();
+}
+async function fetchCloud(key) {
+  const r=await fetch('/api/sync',{headers:{Authorization:'Bearer '+key}});
+  if(r.status===401) throw new Error('chave');
+  if(!r.ok) throw new Error('servidor');
+  return r.json();
+}
+async function joinCloud() {
+  const key=(prompt('Cole a chave copiada do outro celular (⚙️ → Conectar ao Claude → Copiar chave):')||'').trim().toLowerCase();
+  if(!key) return;
+  if(!/^[0-9a-f]{64}$/.test(key)) return alert('Essa chave não parece certa. Copie de novo no outro celular.');
+  let remote;
+  try { remote=await fetchCloud(key); }
+  catch(e) { return alert(e.message==='chave'?'Chave não reconhecida.':'Não consegui falar com o servidor. Verifique a internet.'); }
+  if(remote.db) {
+    if(confirm(`Encontrei dados na nuvem (enviados ${agoLabel(remote.meta?.savedAt)||'antes'}).\n\nSubstituir os dados DESTE celular por eles?`)) {
+      lsSet(CLOUD_KEY,key); lsSet(CLOUD_STATUS,'ok'); lsSet(CLOUD_LAST,remote.meta?.savedAt||null); lsSet(CLOUD_PENDING,null);
+      db=loadMerge(remote.db); saveLocalOnly(); updateHeader(); renderSection(currentSection); updateCloudUI();
+      return flashToast('✅ Dados da nuvem carregados','#059669');
+    }
+    if(!confirm('Então os dados DESTE celular vão substituir os da nuvem. Continuar?')) return;
+  }
+  lsSet(CLOUD_KEY,key); lsSet(CLOUD_STATUS,'ok'); cloudSeq++; lsSet(CLOUD_PENDING,'1'); await cloudPush();
+}
+async function restoreFromCloud() {
+  let remote;
+  try { remote=await fetchCloud(cloudKey()); }
+  catch(e) { return alert(e.message==='chave'?'Chave não reconhecida.':'Não consegui falar com o servidor. Verifique a internet.'); }
+  if(!remote.db) return alert('Ainda não há dados na nuvem.');
+  if(!confirm(`Substituir os dados deste celular pela cópia da nuvem (enviada ${agoLabel(remote.meta?.savedAt)})?`)) return;
+  db=loadMerge(remote.db); saveLocalOnly(); lsSet(CLOUD_PENDING,null);
+  updateHeader(); renderSection(currentSection); updateCloudUI();
+  flashToast('✅ Dados restaurados','#059669');
+}
+function disconnectCloud() {
+  if(!confirm('Desconectar este celular? Os dados continuam aqui e a cópia na nuvem não é apagada.')) return;
+  [CLOUD_KEY,CLOUD_LAST,CLOUD_PENDING,CLOUD_STATUS].forEach(k=>lsSet(k,null));
+  updateCloudUI();
+}
+
+function updateCloudUI() {
+  const box=document.getElementById('cloud-box'); if(!box) return;
+  const btn='width:100%;text-align:center;margin-bottom:6px';
+  if(!cloudKey()) {
+    box.innerHTML=`<div style="font-size:12px;color:#6b7280;margin-bottom:8px;line-height:1.4">Envia seus lançamentos para um espaço privado no site. Assim o Claude consegue analisar tudo pelo conector, e você ganha uma cópia online dos dados.</div>
+      <button class="btn-outline" style="${btn}" onclick="activateCloud()">🤖 Ativar conexão</button>
+      <button class="btn-secondary" style="${btn};font-size:12px" onclick="joinCloud()">Já ativei em outro celular</button>`;
+    return;
+  }
+  const st=lsGet(CLOUD_STATUS), pend=lsGet(CLOUD_PENDING)==='1', last=lsGet(CLOUD_LAST);
+  const line=st==='chave'?'<span style="color:#dc2626">⚠️ Chave recusada pelo servidor. Desconecte e conecte de novo.</span>'
+    :pend?`<span style="color:#d97706">⏳ Alterações aguardando envio${navigator.onLine?'':' (sem internet)'}</span>`
+    :`<span style="color:#059669">✅ Conectado · último envio ${agoLabel(last)||'—'}</span>`;
+  box.innerHTML=`<div style="font-size:12px;font-weight:600;margin-bottom:8px">${line}</div>
+    <button class="btn-outline" style="${btn}" onclick="copyConnectorLink()">📋 Copiar link do conector</button>
+    <div style="font-size:11px;color:#9ca3af;margin:-2px 0 8px;line-height:1.4">No claude.ai: Configurações → Conectores → Adicionar conector personalizado → cole o link. O link só permite ler os dados.</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn-secondary" style="flex:1;font-size:12px;padding:8px 6px" onclick="restoreFromCloud()">⬇️ Restaurar</button>
+      <button class="btn-secondary" style="flex:1;font-size:12px;padding:8px 6px" onclick="copyCloudKey()">🔑 Outro celular</button>
+      <button class="btn-secondary" style="flex:1;font-size:12px;padding:8px 6px;color:#dc2626" onclick="disconnectCloud()">Desconectar</button>
+    </div>`;
+}
+
 // ============================================================
 // 🏁 MODO SPRINT — daily (abrir/fechar o dia), semana e leads
 // ============================================================
@@ -3430,6 +3573,8 @@ function init() {
   renderSection('dashboard');
   // Primeira vez: salva o padrão e abre a configuração do carro
   if(!localStorage.getItem(DB_KEY)) { saveLocalOnly(); setTimeout(openCarSetupModal,600); }
+  // Alterações que ficaram sem enviar (ex.: app fechado sem internet)
+  if(lsGet(CLOUD_PENDING)==='1') setTimeout(cloudPush,1500);
 }
 
 init();
