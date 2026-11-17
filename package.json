@@ -1,0 +1,11 @@
+{
+  "name": "finance-uber",
+  "private": true,
+  "description": "FinanceUber — app estático + funções Netlify (sincronização e conector do Claude)",
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@netlify/blobs": "11.1.7",
+    "zod": "4.6.7"
+  }
+}
