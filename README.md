@@ -4,6 +4,9 @@ App de finanças pessoais para motoristas de Uber/99 e corretores. Tudo fica sal
 
 ## Funcionalidades
 
+- 👋 **Primeiro uso em passo a passo**: você, carro (elétrico ou combustão, alugado ou não), contrato, metas e dinheiro de hoje (contas, dívidas e contas fixas)
+- 🗓️ **Toda segunda depois das 04:00**: o app pergunta com qual carro você roda na semana e o odômetro. Trocar de carro conta o km de cada um separado
+- 🔄 **Recomeçar do zero** em ⚙️, que baixa um backup antes de apagar
 - 🏁 **Modo Sprint**: rotina diária com "☀️ Abrir o dia" e "🌙 Fechar o dia" (de hoje ou de qualquer dia anterior, com horas, viagens, dinheiro, bateria e conversas novas), cartão da semana (bruto × piso/meta, km, R$/km, R$/hora, energia real das recargas, outros gastos, excedente, líquido, caixa após caução), leads por origem e avisos do que falta lançar
 - 📑 **Contrato do carro**: semana do vencimento ao vencimento (km × limite, excedente), pagamentos de aluguel e caução e custo de rescisão
 - 🔌 **Recargas**: rua ou casa, kWh, valor, ociosidade e % da bateria

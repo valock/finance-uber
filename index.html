@@ -76,6 +76,14 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
 .section-title{font-size:20px;font-weight:700;color:#111827;margin-bottom:16px}
 .icon-circle{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .sbadge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600}
+.setup-step{display:none}.setup-step.active{display:block}
+.su-chip{display:flex;align-items:center;gap:6px;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:99px;font-size:13px;cursor:pointer;background:white}
+.su-chip input{width:16px;height:16px}
+.su-list-title{font-size:13px;font-weight:600;color:#374151;margin:12px 0 6px}
+.su-add{width:100%;padding:8px;border:1.5px dashed #d1d5db;background:none;border-radius:10px;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.su-row{display:grid;gap:6px;margin-bottom:6px;align-items:center}
+.su-row .form-input{padding:9px 10px;font-size:14px}
+.su-row button{border:none;background:none;font-size:16px;cursor:pointer;color:#9ca3af}
 </style>
 </head>
 <body>
@@ -660,6 +668,127 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
   </div></div>
 </div>
 
+<!-- 👋 Primeiro uso (passo a passo) -->
+<div class="modal" id="modal-setup">
+  <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <h3 id="setup-title" style="font-size:18px;font-weight:700;color:#111827">👋 Vamos começar</h3>
+      <span id="setup-step-label" style="font-size:12px;color:#9ca3af"></span>
+    </div>
+    <div class="progress-bar" style="height:5px;margin-bottom:14px"><div class="progress-fill" id="setup-progress" style="width:0%;background:#10b981"></div></div>
+
+    <div class="setup-step" data-step="1">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:14px;line-height:1.5">Responda uma vez. Depois o app só pergunta o km do carro toda segunda e o resultado de cada dia.</p>
+      <div class="form-group"><label class="form-label">Seu nome</label><input type="text" class="form-input" id="su-name" placeholder="Como quer ser chamado"></div>
+      <div class="form-group"><label class="form-label">Cidade</label><input type="text" class="form-input" id="su-city" placeholder="Ex: Uberlândia"></div>
+      <div class="form-group"><label class="form-label">Cônjuge <span style="color:#9ca3af;font-weight:400">— opcional</span></label><input type="text" class="form-input" id="su-spouse" placeholder="Nome, se tiver renda junto"></div>
+      <div class="form-label">Você trabalha com</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+        <label class="su-chip"><input type="checkbox" id="su-work-uber"> 🚗 Uber</label>
+        <label class="su-chip"><input type="checkbox" id="su-work-99"> 🟡 99</label>
+        <label class="su-chip"><input type="checkbox" id="su-work-corretor"> 🏠 Corretor</label>
+      </div>
+      <button class="btn-secondary" style="width:100%;text-align:center;font-size:13px" onclick="document.getElementById('import-file').click()">📥 Já tenho um backup: importar arquivo</button>
+    </div>
+
+    <div class="setup-step" data-step="2">
+      <div class="form-label">Qual carro você está usando?</div>
+      <div class="type-switch">
+        <button class="type-btn active" id="su-car-eletrico" onclick="setSetupCar('eletrico')">🔌 Elétrico</button>
+        <button class="type-btn" id="su-car-combustao" onclick="setSetupCar('combustao')">⛽ Combustão</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;margin:-8px 0 12px;cursor:pointer"><input type="checkbox" id="su-rented" style="width:18px;height:18px" checked> É alugado (tem contrato semanal)</label>
+      <div class="form-group"><label class="form-label">Modelo</label><input type="text" class="form-input" id="su-model" placeholder="Ex: Geely EX2"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label class="form-label" id="su-cons-label">Consumo (km/kWh)</label><input type="number" inputmode="decimal" class="form-input" id="su-cons" step="0.1" min="0"></div>
+        <div class="form-group"><label class="form-label" id="su-price-label">Energia (R$/kWh)</label><input type="number" inputmode="decimal" class="form-input" id="su-price" step="0.01" min="0"></div>
+        <div class="form-group su-ev"><label class="form-label">Bateria (kWh)</label><input type="number" inputmode="decimal" class="form-input" id="su-batt-kwh" step="0.1" min="0"></div>
+        <div class="form-group su-ev"><label class="form-label">Tarifa em casa (R$/kWh)</label><input type="number" inputmode="decimal" class="form-input" id="su-home-kwh" step="0.01" min="0"></div>
+      </div>
+      <div class="form-group"><label class="form-label">🛣️ Odômetro agora (km)</label><input type="number" inputmode="numeric" class="form-input" id="su-odo" step="1" min="0" style="font-size:20px;font-weight:700;text-align:center"></div>
+    </div>
+
+    <div class="setup-step" data-step="3">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:12px">📑 Contrato do aluguel</p>
+      <div class="form-group"><label class="form-label">Retirada do carro (data e hora)</label><input type="datetime-local" class="form-input" id="su-c-start"></div>
+      <div class="form-group"><label class="form-label">1º vencimento <span style="color:#9ca3af;font-weight:400">— vazio = 7 dias depois</span></label><input type="datetime-local" class="form-input" id="su-c-due"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label class="form-label">Fim do contrato</label><input type="date" class="form-input" id="su-c-end"></div>
+        <div class="form-group"><label class="form-label">Km na entrega</label><input type="number" inputmode="numeric" class="form-input" id="su-c-km" min="0"></div>
+        <div class="form-group"><label class="form-label">Aluguel/semana (R$)</label><input type="number" inputmode="decimal" class="form-input" id="su-c-rent" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Limite km/semana</label><input type="number" inputmode="numeric" class="form-input" id="su-c-limit"></div>
+        <div class="form-group"><label class="form-label">Km excedente (R$/km)</label><input type="number" inputmode="decimal" class="form-input" id="su-c-excess" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Caução total (R$)</label><input type="number" inputmode="decimal" class="form-input" id="su-c-caution-total" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Caução/semana (R$)</label><input type="number" inputmode="decimal" class="form-input" id="su-c-caution" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Semanas de caução</label><input type="number" inputmode="numeric" class="form-input" id="su-c-caution-weeks" min="0"></div>
+      </div>
+    </div>
+
+    <div class="setup-step" data-step="4">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:12px">🎯 Metas do sprint</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label class="form-label">Início (segunda)</label><input type="date" class="form-input" id="su-g-start"></div>
+        <div class="form-group"><label class="form-label">Semanas</label><input type="number" inputmode="numeric" class="form-input" id="su-g-weeks" min="1"></div>
+        <div class="form-group"><label class="form-label">Piso semanal (R$)</label><input type="number" inputmode="decimal" class="form-input" id="su-g-floor" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Meta semanal (R$)</label><input type="number" inputmode="decimal" class="form-input" id="su-g-target" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Banco: bruto/mês (R$)</label><input type="number" inputmode="decimal" class="form-input" id="su-g-bank" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Banco: meses exigidos</label><input type="number" inputmode="numeric" class="form-input" id="su-g-months" min="1"></div>
+        <div class="form-group"><label class="form-label">R$/km mínimo</label><input type="number" inputmode="decimal" class="form-input" id="su-g-minrev" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Teto horas/semana</label><input type="number" inputmode="numeric" class="form-input" id="su-g-hours" min="0" placeholder="0 = sem teto"></div>
+      </div>
+    </div>
+
+    <div class="setup-step" data-step="5">
+      <p style="font-size:13px;color:#6b7280;margin-bottom:10px;line-height:1.5">💰 Seu dinheiro hoje. Preencha o que souber; dá para completar depois em "Ver tudo".</p>
+      <div class="su-list-title">🏦 Contas e saldos</div><div id="su-banks"></div>
+      <button class="su-add" onclick="addSetupRow('banks')">+ Conta</button>
+      <div class="su-list-title">💳 Dívidas</div><div id="su-debts"></div>
+      <button class="su-add" onclick="addSetupRow('debts')">+ Dívida</button>
+      <div class="su-list-title">📋 Contas fixas do mês</div><div id="su-bills"></div>
+      <button class="su-add" onclick="addSetupRow('bills')">+ Conta fixa</button>
+    </div>
+
+    <div class="setup-step" data-step="6">
+      <div id="setup-summary" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;color:#065f46;line-height:1.7"></div>
+      <div style="font-size:12px;color:#6b7280;line-height:1.5">Depois de começar:<br>• Para lançar os dias que já passaram: <strong>🌙 Fechar</strong> → escolha a data.<br>• Toda <strong>segunda depois das 04:00</strong> o app pergunta o km do carro da semana.</div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn-secondary" id="setup-back" style="flex:1;text-align:center" onclick="setupGo(-1)">← Voltar</button>
+      <button class="btn-primary" id="setup-next" style="flex:2;margin:0" onclick="setupGo(1)">Continuar →</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- 🗓️ Começo da semana (toda segunda depois das 04:00) -->
+<div class="modal" id="modal-semana">
+  <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
+    <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:4px">🗓️ Começo da semana</h3>
+    <p id="semana-sub" style="font-size:13px;color:#6b7280;margin-bottom:12px"></p>
+    <div id="semana-recap" style="display:none;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px;color:#374151;line-height:1.7"></div>
+    <div class="form-label">Com qual carro você roda esta semana?</div>
+    <div class="type-switch">
+      <button class="type-btn active" id="sem-car-eletrico" onclick="setSemanaCar('eletrico')">🔌 Elétrico alugado</button>
+      <button class="type-btn" id="sem-car-combustao" onclick="setSemanaCar('combustao')">⛽ Combustão</button>
+    </div>
+    <div id="sem-switch-box" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px;margin:-8px 0 14px;font-size:12px;color:#92400e">
+      Troca de carro: o km dele é contado separado a partir de hoje.
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div><label class="form-label" style="font-size:12px" id="sem-cons-label">Consumo</label><input type="number" inputmode="decimal" class="form-input" id="sem-cons" step="0.1" min="0"></div>
+        <div><label class="form-label" style="font-size:12px" id="sem-price-label">Preço</label><input type="number" inputmode="decimal" class="form-input" id="sem-price" step="0.01" min="0"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">🛣️ Odômetro agora (km)</label>
+      <input type="number" inputmode="numeric" class="form-input" id="sem-odo" placeholder="Ex: 12400" step="1" min="0" style="font-size:22px;font-weight:700;text-align:center">
+      <div id="sem-odo-hint" style="font-size:11px;color:#9ca3af;margin-top:6px;text-align:center"></div>
+    </div>
+    <div class="form-group"><label class="form-label" id="sem-bat-label">🔋 Bateria agora (%)</label><input type="number" inputmode="numeric" class="form-input" id="sem-bat" step="1" min="0" max="100"></div>
+    <button class="btn-primary" onclick="saveSemana()">✅ Começar a semana</button>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="skipSemana()">Agora não</button>
+  </div></div>
+</div>
+
 <!-- Car Setup -->
 <div class="modal" id="modal-car-setup">
   <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
@@ -751,6 +880,8 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
       <div style="font-size:11px;color:#9ca3af;margin-top:6px;line-height:1.4">Lembretes locais às 21h (lançar Uber) e domingo 10h (auditoria). Funciona melhor quando o app está instalado no celular.</div>
     </div>
     <div style="margin-top:12px">
+      <button onclick="restartFromScratch()" style="width:100%;padding:12px;background:#fef3c7;color:#92400e;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:8px">🔄 Recomeçar do zero (baixa um backup antes)</button>
+      <button class="btn-secondary" style="width:100%;text-align:center;margin-bottom:8px" onclick="closeModal('modal-config');openSetup()">👋 Refazer o passo a passo (sem apagar)</button>
       <button onclick="confirmClear()" style="width:100%;padding:12px;background:#fee2e2;color:#dc2626;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">🗑️ Apagar Todos os Dados</button>
     </div>
     <button class="btn-secondary" style="width:100%;margin-top:10px;text-align:center" onclick="closeModal('modal-config')">Fechar</button>
@@ -855,7 +986,9 @@ function normalizeNewFields(m) {
   else Object.keys(def).forEach(k=>{ if(m.sprint[k]===undefined || m.sprint[k]===null) m.sprint[k]=def[k]; });
   if(!Array.isArray(m.sprint.leads)) m.sprint.leads=[];
   if(!m.sprint.days || typeof m.sprint.days!=='object' || Array.isArray(m.sprint.days)) m.sprint.days={};
-  ['charges','payments','deals'].forEach(k=>{ if(!Array.isArray(m.sprint[k])) m.sprint[k]=[]; });
+  ['charges','payments','deals','carChanges'].forEach(k=>{ if(!Array.isArray(m.sprint[k])) m.sprint[k]=[]; });
+  ['cars','weekChecks'].forEach(k=>{ if(!m.sprint[k] || typeof m.sprint[k]!=='object' || Array.isArray(m.sprint[k])) m.sprint[k]={}; });
+  if(!m.profile || typeof m.profile!=='object') m.profile={name:'',spouse:''};
   if(!m.carSetup.type) m.carSetup.type='combustao';
   return m;
 }
@@ -2436,7 +2569,7 @@ function renderSprintDashboard() {
   const netParts=[`${carUnits().energy.toLowerCase()}`,`aluguel ${fmt(st.rent)}`];
   if(st.otherCosts>0) netParts.push(`outros ${fmt(st.otherCosts)}`);
   if(st.excessCost>0) netParts.push(`excedente ${fmt(st.excessCost)}`);
-  const energySub=st.energyEstimated?`estimativa: ${db.carSetup.kmPerLiter} ${carUnits().cons} · R$ ${db.carSetup.fuelPrice}/${carUnits().unit}`:`${st.chargeSessions} recarga${st.chargeSessions>1?'s':''} · ${fmtDec(st.energyKwh)} kWh${st.idleFees>0?` · ociosidade ${fmt(st.idleFees)}`:''}`;
+  const energySub=st.energyEstimated?`estimativa: ${db.carSetup.kmPerLiter} ${carUnits().cons} · R$ ${db.carSetup.fuelPrice}/${carUnits().unit}`:[st.chargeSessions?`${st.chargeSessions} recarga${st.chargeSessions>1?'s':''} · ${fmtDec(st.energyKwh)} kWh`:'',st.energyFuel>0?`abastecimentos ${fmt(st.energyFuel)}`:'',st.idleFees>0?`ociosidade ${fmt(st.idleFees)}`:''].filter(Boolean).join(' · ');
   const weekCard=`<div class="card" id="sprint-week-card">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
       <div style="font-weight:700;color:#111827;font-size:15px">${weekTitle}</div>
@@ -2885,6 +3018,255 @@ function readSprintConfig() {
     const v=parseFloat(document.getElementById('sp-'+k)?.value);
     if(!isNaN(v) && v>=0) s[k]=v;
   });
+}
+
+// ============================================================
+// 👋 PRIMEIRO USO — pergunta tudo uma vez (passo a passo)
+// ============================================================
+const SETUP_STEPS=[
+  {n:1, title:'👋 Sobre você'},
+  {n:2, title:'🚗 Seu carro'},
+  {n:3, title:'📑 Contrato', skip:()=>!document.getElementById('su-rented').checked},
+  {n:4, title:'🎯 Metas'},
+  {n:5, title:'💰 Seu dinheiro hoje'},
+  {n:6, title:'✅ Tudo pronto'},
+];
+let setupStep=1, setupCar='eletrico', setupRows={banks:[],debts:[],bills:[]};
+function setupDone() { return !!db.profile?.onboardedAt; }
+function setSetupCar(t) {
+  setupCar=t==='combustao'?'combustao':'eletrico';
+  ['eletrico','combustao'].forEach(k=>document.getElementById('su-car-'+k).classList.toggle('active',k===setupCar));
+  const el=setupCar==='eletrico';
+  document.getElementById('su-cons-label').textContent=el?'Consumo (km/kWh)':'Consumo (km/L)';
+  document.getElementById('su-price-label').textContent=el?'Energia (R$/kWh)':'Combustível (R$/L)';
+  document.querySelectorAll('#modal-setup .su-ev').forEach(e=>e.style.display=el?'block':'none');
+  const cfg=(db.carSetup?.type===setupCar)?db.carSetup:(db.sprint.cars?.[setupCar]||{});
+  setVal('su-cons', cfg.kmPerLiter||''); setVal('su-price', cfg.fuelPrice||'');
+}
+function openSetup() {
+  const p=db.profile||{}, s=db.sprint, car=db.carSetup||{};
+  document.getElementById('su-name').value=p.name||'';
+  document.getElementById('su-city').value=p.city||'';
+  document.getElementById('su-spouse').value=p.spouse||'';
+  const w=p.work||['uber','99'];
+  ['uber','99','corretor'].forEach(k=>document.getElementById('su-work-'+k).checked=w.includes(k));
+  document.getElementById('su-model').value=car.model||'';
+  document.getElementById('su-rented').checked=car.rented!==false;
+  // App novo começa no elétrico (o carro do sprint); quem já tem dados vê o carro cadastrado
+  const fresh=!setupDone() && !db.income.length && !db.kmLog.length;
+  setSetupCar(fresh?'eletrico':(car.type==='combustao'?'combustao':'eletrico'));
+  setVal('su-batt-kwh', s.batteryKwh); setVal('su-home-kwh', s.homeKwhPrice);
+  const lastOdo=lastOdoBefore(addDaysStr(opDate(),1));
+  setVal('su-odo', lastOdo||'');
+  document.getElementById('su-c-start').value=s.contractStart||'';
+  document.getElementById('su-c-due').value=s.firstDue||'';
+  document.getElementById('su-c-end').value=s.contractEnd||'';
+  setVal('su-c-km', s.kmDelivery); setVal('su-c-rent', s.rentWeekly); setVal('su-c-limit', s.kmLimitWeekly);
+  setVal('su-c-excess', s.excessKmRate); setVal('su-c-caution-total', s.cautionTotal);
+  setVal('su-c-caution', s.cautionWeekly); setVal('su-c-caution-weeks', s.cautionWeeks);
+  document.getElementById('su-g-start').value=s.startDate||mondayOf(opDate());
+  setVal('su-g-weeks', s.weeks); setVal('su-g-floor', s.weeklyFloor); setVal('su-g-target', s.weeklyTarget);
+  setVal('su-g-bank', s.monthlyBankFloor); setVal('su-g-months', s.bankMonthsNeeded); setVal('su-g-minrev', s.minRevPerKm);
+  setVal('su-g-hours', s.weeklyHoursCap);
+  setupRows={banks:[],debts:[],bills:[]};
+  ['banks','debts','bills'].forEach(renderSetupRows);
+  setupStep=1; showSetupStep();
+  openModal('modal-setup');
+}
+const SETUP_ROW_FIELDS={
+  banks:[{k:'bank',ph:'Banco',type:'text'},{k:'balance',ph:'Saldo R$',type:'number'}],
+  debts:[{k:'name',ph:'Dívida',type:'text'},{k:'remaining',ph:'Saldo R$',type:'number'},{k:'minPayment',ph:'Parcela R$',type:'number'}],
+  bills:[{k:'name',ph:'Conta',type:'text'},{k:'amount',ph:'Valor R$',type:'number'},{k:'dueDay',ph:'Dia',type:'number'}],
+};
+function existingSetupItems(kind) {
+  if(kind==='banks') return db.bankAccounts.map(b=>`${escHtml(b.bank)} · ${fmt(b.balance)}`);
+  if(kind==='debts') return db.debts.map(d=>`${escHtml(d.name)} · ${fmt(d.remaining)}`);
+  return db.bills.map(b=>`${escHtml(b.name)} · ${fmt(b.amount)} · dia ${b.dueDay}`);
+}
+function renderSetupRows(kind) {
+  const f=SETUP_ROW_FIELDS[kind], cols=f.map((x,i)=>i===0?'1.4fr':'1fr').join(' ')+' 24px';
+  const existing=existingSetupItems(kind).map(t=>`<div style="font-size:12px;color:#6b7280;padding:3px 0">✓ ${t} <span style="color:#9ca3af">(já cadastrado)</span></div>`).join('');
+  document.getElementById('su-'+kind).innerHTML=existing+setupRows[kind].map((r,i)=>`<div class="su-row" style="grid-template-columns:${cols}">
+    ${f.map(x=>`<input class="form-input" type="${x.type}" ${x.type==='number'?'inputmode="decimal" step="0.01" min="0"':''} placeholder="${x.ph}" value="${escHtml(r[x.k]??'')}" oninput="setupRows['${kind}'][${i}]['${x.k}']=this.value">`).join('')}
+    <button onclick="setupRows['${kind}'].splice(${i},1);renderSetupRows('${kind}')">✕</button></div>`).join('');
+}
+function addSetupRow(kind) { setupRows[kind].push({}); renderSetupRows(kind); }
+function visibleSetupSteps() { return SETUP_STEPS.filter(x=>!x.skip||!x.skip()); }
+function showSetupStep() {
+  const vis=visibleSetupSteps(), idx=vis.findIndex(x=>x.n===setupStep);
+  document.querySelectorAll('#modal-setup .setup-step').forEach(e=>e.classList.toggle('active',+e.dataset.step===setupStep));
+  document.getElementById('setup-title').textContent=SETUP_STEPS.find(x=>x.n===setupStep).title;
+  document.getElementById('setup-step-label').textContent=`${idx+1} de ${vis.length}`;
+  document.getElementById('setup-progress').style.width=((idx+1)/vis.length*100)+'%';
+  document.getElementById('setup-back').style.visibility=idx>0?'visible':'hidden';
+  document.getElementById('setup-next').textContent=setupStep===6?'🚀 Começar':'Continuar →';
+  if(setupStep===6) document.getElementById('setup-summary').innerHTML=setupSummary();
+  document.querySelector('#modal-setup .modal-body').scrollTop=0;
+}
+function setupSummary() {
+  const v=id=>document.getElementById(id).value, n=id=>numVal(id);
+  const rented=document.getElementById('su-rented').checked, el=setupCar==='eletrico';
+  const lines=[
+    `👤 <strong>${escHtml(v('su-name')||'—')}</strong>${v('su-city')?' · '+escHtml(v('su-city')):''}`,
+    `🚗 ${el?'Elétrico':'Combustão'}${rented?' alugado':''}${v('su-model')?' · '+escHtml(v('su-model')):''} · ${n('su-cons')||'?'} ${el?'km/kWh':'km/L'} · R$ ${n('su-price')||'?'}/${el?'kWh':'L'}`,
+    n('su-odo')?`🛣️ Odômetro: ${fmtInt(n('su-odo'))} km`:'🛣️ Odômetro: não informado',
+  ];
+  if(rented) lines.push(`📑 Retirada ${fmtDT(v('su-c-start'))} · aluguel ${fmt(n('su-c-rent'))}/sem. · limite ${fmtInt(n('su-c-limit'))} km`);
+  lines.push(`🎯 Piso ${fmt(n('su-g-floor'))} · meta ${fmt(n('su-g-target'))}/sem. · banco ${fmt(n('su-g-bank'))}/mês × ${n('su-g-months')||4}`);
+  const cnt=k=>setupRows[k].filter(r=>Object.values(r).some(x=>String(x).trim())).length;
+  lines.push(`💰 ${db.bankAccounts.length+cnt('banks')} conta(s) · ${db.debts.length+cnt('debts')} dívida(s) · ${db.bills.length+cnt('bills')} conta(s) fixa(s)`);
+  return lines.join('<br>');
+}
+function validateSetupStep() {
+  if(setupStep===1 && !document.getElementById('su-name').value.trim()) return 'Digite seu nome.';
+  if(setupStep===2) {
+    if(!(numVal('su-cons')>0) || !(numVal('su-price')>0)) return 'Preencha o consumo e o preço da energia/combustível.';
+  }
+  if(setupStep===3) {
+    const st=document.getElementById('su-c-start').value;
+    if(!st) return 'Preencha a data e a hora da retirada do carro.';
+    const due=document.getElementById('su-c-due').value;
+    if(due && due<=st) return 'O 1º vencimento precisa ser depois da retirada.';
+  }
+  if(setupStep===4 && !document.getElementById('su-g-start').value) return 'Escolha o início do sprint.';
+  return null;
+}
+function setupGo(dir) {
+  if(dir>0) {
+    const e=validateSetupStep(); if(e) return alert(e);
+    if(setupStep===6) return finishSetup();
+  }
+  const vis=visibleSetupSteps(), idx=vis.findIndex(x=>x.n===setupStep);
+  const next=vis[Math.max(0,Math.min(vis.length-1,idx+dir))];
+  setupStep=next.n; showSetupStep();
+}
+function finishSetup() {
+  const v=id=>document.getElementById(id).value, n=id=>numVal(id), s=db.sprint;
+  const work=['uber','99','corretor'].filter(k=>document.getElementById('su-work-'+k).checked);
+  db.profile={...(db.profile||{}), name:v('su-name').trim(), city:v('su-city').trim(), spouse:v('su-spouse').trim(), work, onboardedAt:new Date().toISOString()};
+  // Carro: guarda o consumo deste carro e mantém o do outro tipo para trocas futuras
+  if(db.carSetup?.type && db.carSetup.type!==setupCar) s.cars[db.carSetup.type]={kmPerLiter:db.carSetup.kmPerLiter, fuelPrice:db.carSetup.fuelPrice};
+  db.carSetup={...db.carSetup, type:setupCar, kmPerLiter:n('su-cons'), fuelPrice:n('su-price'), model:v('su-model').trim(), rented:document.getElementById('su-rented').checked};
+  s.cars[setupCar]={kmPerLiter:n('su-cons'), fuelPrice:n('su-price')};
+  if(setupCar==='eletrico') { if(n('su-batt-kwh')>0) s.batteryKwh=n('su-batt-kwh'); s.homeKwhPrice=n('su-home-kwh'); }
+  if(db.carSetup.rented) {
+    s.contractStart=SC.isDT(v('su-c-start'))?v('su-c-start'):'';
+    s.firstDue=SC.isDT(v('su-c-due'))?v('su-c-due'):'';
+    s.contractEnd=v('su-c-end')||'';
+    const putN=(k,id)=>{ const x=parseFloat(v(id)); if(!isNaN(x)&&x>=0) s[k]=x; };
+    putN('kmDelivery','su-c-km'); putN('rentWeekly','su-c-rent'); putN('kmLimitWeekly','su-c-limit'); putN('excessKmRate','su-c-excess');
+    putN('cautionTotal','su-c-caution-total'); putN('cautionWeekly','su-c-caution'); putN('cautionWeeks','su-c-caution-weeks');
+  }
+  s.enabled=true;
+  s.startDate=mondayOf(v('su-g-start')||opDate());
+  const putG=(k,id)=>{ const x=parseFloat(v(id)); if(!isNaN(x)&&x>=0) s[k]=x; };
+  putG('weeks','su-g-weeks'); putG('weeklyFloor','su-g-floor'); putG('weeklyTarget','su-g-target'); putG('monthlyBankFloor','su-g-bank');
+  putG('bankMonthsNeeded','su-g-months'); putG('minRevPerKm','su-g-minrev'); putG('weeklyHoursCap','su-g-hours');
+  // Dinheiro: só ADICIONA o que foi preenchido agora
+  setupRows.banks.filter(r=>(r.bank||'').trim()).forEach(r=>db.bankAccounts.push({id:uid(), bank:r.bank.trim(), type:'corrente', balance:parseFloat(r.balance)||0, color:BANK_COLORS[db.bankAccounts.length%BANK_COLORS.length]}));
+  setupRows.debts.filter(r=>(r.name||'').trim()).forEach(r=>db.debts.push({id:uid(), name:r.name.trim(), creditor:'', remaining:parseFloat(r.remaining)||0, minPayment:parseFloat(r.minPayment)||0, rate:0, color:DEBT_COLORS[db.debts.length%DEBT_COLORS.length]}));
+  setupRows.bills.filter(r=>(r.name||'').trim()&&parseFloat(r.amount)>0).forEach(r=>db.bills.push({id:uid(), name:r.name.trim(), amount:parseFloat(r.amount), dueDay:Math.max(1,Math.min(31,parseInt(r.dueDay)||1)), category:'Outros', linkedFinancingId:null, paid:[]}));
+  // Odômetro de agora = leitura de começo da semana (não pergunta de novo nesta semana)
+  const odo=n('su-odo'), ws=mondayOf(opDate());
+  if(odo>0) s.weekChecks[ws]={at:new Date().toISOString(), date:opDate(), odo, carType:setupCar};
+  else if(!s.weekChecks[ws]) s.weekChecks[ws]={at:new Date().toISOString(), date:opDate(), carType:setupCar, skipped:true};
+  saveDb(); closeModal('modal-setup'); updateHeader(); renderSection('dashboard');
+  flashToast(`🚀 Pronto, ${db.profile.name}! Lance os dias anteriores em 🌙 Fechar.`,'#059669');
+}
+
+// ============================================================
+// 🗓️ TODA SEGUNDA (depois das 04:00): km do carro da semana
+// ============================================================
+let semanaCar='eletrico', semanaSkipped=null;
+function weekCheckDue() {
+  if(!sprintOn() || !setupDone()) return false;
+  const ws=mondayOf(opDate());
+  return !db.sprint.weekChecks[ws] && semanaSkipped!==ws;
+}
+function maybeAskWeek() {
+  if(!weekCheckDue() || document.querySelector('.modal.open')) return;
+  openSemana();
+}
+function setSemanaCar(t) {
+  semanaCar=t==='combustao'?'combustao':'eletrico';
+  ['eletrico','combustao'].forEach(k=>document.getElementById('sem-car-'+k).classList.toggle('active',k===semanaCar));
+  const el=semanaCar==='eletrico', switching=semanaCar!==(db.carSetup?.type||'combustao');
+  document.getElementById('sem-bat-label').textContent=el?'🔋 Bateria agora (%)':'⛽ Tanque agora (%)';
+  const box=document.getElementById('sem-switch-box'); box.style.display=switching?'block':'none';
+  if(switching) {
+    document.getElementById('sem-cons-label').textContent=el?'Consumo (km/kWh)':'Consumo (km/L)';
+    document.getElementById('sem-price-label').textContent=el?'Energia (R$/kWh)':'Combustível (R$/L)';
+    const cfg=db.sprint.cars?.[semanaCar]||{};
+    setVal('sem-cons',cfg.kmPerLiter||''); setVal('sem-price',cfg.fuelPrice||'');
+  }
+  const hint=document.getElementById('sem-odo-hint');
+  const last=switching?null:lastOdoBefore(addDaysStr(opDate(),1));
+  hint.textContent=switching?'Odômetro do outro carro (contado separado)':(last!==null?`Última leitura deste carro: ${fmtInt(last)} km`:'Primeira leitura deste carro');
+}
+function openSemana() {
+  const d=opDate(), ws=mondayOf(d), s=db.sprint;
+  const st=sprintStats(d);
+  document.getElementById('semana-sub').textContent=`${weekdayLabel(ws)} · Semana ${st.weekNum} de ${s.weeks}`;
+  const prev=SC.week(db, addDaysStr(ws,-1), addDaysStr(ws,-1)+'T23:59');
+  const recap=document.getElementById('semana-recap');
+  if(prev.gross>0 || prev.km>0) {
+    recap.style.display='block';
+    recap.innerHTML=`<strong>Semana passada</strong><br>💰 Bruto ${fmt(prev.gross)} · 🛣️ ${fmtInt(prev.km)} km${prev.revPerKm?` · ${fmt(prev.revPerKm)}/km`:''}<br>💵 Líquido ${fmtSigned(prev.net)}${prev.hasCaution?` · após caução ${fmtSigned(prev.cashAfter)}`:''} · 🎯 ${sumCounts(prev.leadsWeek)} leads`;
+  } else recap.style.display='none';
+  setVal('sem-odo',''); setVal('sem-bat','');
+  setSemanaCar(db.carSetup?.type==='combustao'?'combustao':'eletrico');
+  openModal('modal-semana');
+}
+function skipSemana() { semanaSkipped=mondayOf(opDate()); closeModal('modal-semana'); }
+function saveSemana() {
+  const d=opDate(), ws=mondayOf(d), s=db.sprint;
+  const odo=numVal('sem-odo'), batRaw=document.getElementById('sem-bat').value;
+  if(!odo) return alert('Digite o odômetro de agora.');
+  const switching=semanaCar!==(db.carSetup?.type||'combustao');
+  if(switching) {
+    const cons=numVal('sem-cons'), price=numVal('sem-price');
+    if(!(cons>0)||!(price>0)) return alert('Preencha o consumo e o preço do carro desta semana.');
+    if(!confirm(`Trocar para o carro ${semanaCar==='eletrico'?'elétrico':'a combustão'} a partir de hoje? O km de cada carro fica separado.`)) return;
+    const prevType=db.carSetup?.type||'combustao';
+    if(db.carSetup?.type) s.cars[db.carSetup.type]={kmPerLiter:db.carSetup.kmPerLiter, fuelPrice:db.carSetup.fuelPrice};
+    s.cars[semanaCar]={kmPerLiter:cons, fuelPrice:price};
+    db.carSetup={...db.carSetup, type:semanaCar, kmPerLiter:cons, fuelPrice:price};
+    s.carChanges=(s.carChanges||[]).filter(c=>c.date!==d);
+    // Primeira troca: registra com qual carro o sprint vinha rodando (para as semanas anteriores)
+    if(!s.carChanges.length) s.carChanges.push({date:'0000-01-01', type:prevType});
+    s.carChanges.push({date:d, type:semanaCar, odo});
+  } else {
+    const last=lastOdoBefore(addDaysStr(d,1));
+    if(last!==null && odo<last && !confirm(`O odômetro (${fmtInt(odo)}) está menor que a última leitura (${fmtInt(last)}). Salvar mesmo assim?`)) return;
+  }
+  const rec={at:new Date().toISOString(), date:d, odo, carType:semanaCar};
+  if(batRaw!=='') rec.battery=Math.max(0,Math.min(100,parseFloat(batRaw)||0));
+  s.weekChecks[ws]=rec;
+  // Vale também como "Abrir o dia" de hoje, se o dia ainda não foi aberto
+  const day=s.days[d]||{};
+  if(!day.openedAt && !day.closedAt) { day.odoStart=odo; if(rec.battery!=null) day.batteryStart=rec.battery; day.openedAt=rec.at; s.days[d]=day; }
+  saveDb(); closeModal('modal-semana'); renderSection(currentSection);
+  flashToast(`🗓️ Semana ${sprintStats(d).weekNum} começou · ${fmtInt(odo)} km`,'#059669');
+}
+
+// ============================================================
+// 🔄 RECOMEÇAR DO ZERO (baixa um backup antes)
+// ============================================================
+function downloadBackupFile() {
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=`financeuber-antes-de-recomecar-${opDate()}.json`;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+}
+function restartFromScratch() {
+  if(!confirm('Recomeçar do zero?\n\n1. O app baixa um backup com tudo o que existe hoje.\n2. Os dados deste celular são apagados.\n3. Abre o passo a passo para você preencher de novo.\n\nA cópia do conector só é substituída quando você terminar o passo a passo.')) return;
+  const typed=prompt('Para confirmar, digite RECOMEÇAR');
+  if((typed||'').trim().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'')!=='RECOMECAR') return alert('Nada foi apagado.');
+  downloadBackupFile();
+  localStorage.setItem(BACKUP_KEY, new Date().toISOString());
+  db=mkDefault(); saveLocalOnly();   // não envia o banco vazio para o conector
+  closeModal('modal-config'); updateHeader(); renderSection('dashboard');
+  setTimeout(openSetup,400);
 }
 
 function renderSection(name) {
@@ -3893,8 +4275,12 @@ function init() {
   if(notificationsEnabled()) scheduleNotifications();
   updateHeader();
   renderSection('dashboard');
-  // Primeira vez: salva o padrão e abre a configuração do carro
-  if(!localStorage.getItem(DB_KEY)) { saveLocalOnly(); setTimeout(openCarSetupModal,600); }
+  // Primeira vez (ou ainda sem o passo a passo): pergunta tudo uma vez
+  if(!localStorage.getItem(DB_KEY)) saveLocalOnly();
+  if(!setupDone()) setTimeout(openSetup,600);
+  else setTimeout(maybeAskWeek,700);
+  // Toda segunda depois das 04:00: ao voltar para o app, pergunta o km da semana
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') setTimeout(()=>{ renderSection(currentSection); maybeAskWeek(); },300); });
   // Alterações que ficaram sem enviar (ex.: app fechado sem internet)
   if(lsGet(CLOUD_PENDING)==='1') setTimeout(cloudPush,1500);
 }
