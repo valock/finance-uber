@@ -3111,7 +3111,7 @@ function setupSummary() {
     `🚗 ${el?'Elétrico':'Combustão'}${rented?' alugado':''}${v('su-model')?' · '+escHtml(v('su-model')):''} · ${n('su-cons')||'?'} ${el?'km/kWh':'km/L'} · R$ ${n('su-price')||'?'}/${el?'kWh':'L'}`,
     n('su-odo')?`🛣️ Odômetro: ${fmtInt(n('su-odo'))} km`:'🛣️ Odômetro: não informado',
   ];
-  if(rented) lines.push(`📑 Retirada ${fmtDT(v('su-c-start'))} · aluguel ${fmt(n('su-c-rent'))}/sem. · limite ${fmtInt(n('su-c-limit'))} km`);
+  if(rented) lines.push(`📑 Retirada ${escHtml(fmtDT(v('su-c-start')))} · aluguel ${fmt(n('su-c-rent'))}/sem. · limite ${fmtInt(n('su-c-limit'))} km`);
   lines.push(`🎯 Piso ${fmt(n('su-g-floor'))} · meta ${fmt(n('su-g-target'))}/sem. · banco ${fmt(n('su-g-bank'))}/mês × ${n('su-g-months')||4}`);
   const cnt=k=>setupRows[k].filter(r=>Object.values(r).some(x=>String(x).trim())).length;
   lines.push(`💰 ${db.bankAccounts.length+cnt('banks')} conta(s) · ${db.debts.length+cnt('debts')} dívida(s) · ${db.bills.length+cnt('bills')} conta(s) fixa(s)`);
