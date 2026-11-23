@@ -4,14 +4,17 @@ App de finanças pessoais para motoristas de Uber/99 e corretores. Tudo fica sal
 
 ## Funcionalidades
 
-- 🏁 **Modo Sprint**: rotina diária com "☀️ Abrir o dia" e "🌙 Fechar o dia", cartão da semana (bruto × piso/meta, km × limite, R$/km, energia, líquido, caixa após caução) e leads por origem
+- 🏁 **Modo Sprint**: rotina diária com "☀️ Abrir o dia" e "🌙 Fechar o dia" (de hoje ou de qualquer dia anterior, com horas, viagens, dinheiro, bateria e conversas novas), cartão da semana (bruto × piso/meta, km, R$/km, R$/hora, energia real das recargas, outros gastos, excedente, líquido, caixa após caução), leads por origem e avisos do que falta lançar
+- 📑 **Contrato do carro**: semana do vencimento ao vencimento (km × limite, excedente), pagamentos de aluguel e caução e custo de rescisão
+- 🔌 **Recargas**: rua ou casa, kWh, valor, ociosidade e % da bateria
+- 🏠 **Funil de vendas** da corretagem e 🏦 **prova de renda** (meses com bruto ≥ piso do banco, dinheiro × app)
 - 🎯 **Metas** diária, semanal e mensal com barra de progresso
 - 💰 **Renda**: Uber, 99, salário do cônjuge e comissões de corretor
 - 🔌 **Carro a combustão ou elétrico**: custo por km em km/L ou km/kWh
 - 📋 **Contas a pagar**, 💳 **dívidas**, 🏦 **financiamentos** e **patrimônio**
 - 📊 **Resumo** mensal e auditoria semanal
 - 💾 **Backup**: Exportar/Importar em JSON, com aviso no Início quando passar de 7 dias sem backup
-- 🤖 **Conector do Claude**: envio automático dos dados e um servidor MCP só de leitura com 7 ferramentas (resumo da semana, do dia e do mês, lançamentos, leads, situação geral e dados completos)
+- 🤖 **Conector do Claude**: envio automático dos dados e um servidor MCP só de leitura com 14 ferramentas (resumos, semana do contrato, prova de renda, recargas, ritmo, pendências, funil de vendas, desempenho por hora e mais)
 
 ## Rodar localmente
 
@@ -32,6 +35,7 @@ Os dados enviados ficam no Netlify Blobs do site.
 
 - Ficam no `localStorage` do navegador, na chave `finance_uber_v2`.
 - Campos novos sempre ganham valor padrão ao carregar (`loadDb`/`loadMerge`), então backups antigos continuam abrindo.
+- Os cálculos do sprint ficam em `sprint-calc.js`, usado pelo app e pelo conector.
 - Para levar os dados a outro celular: ⚙️ → Exportar no de origem e ⚙️ → Importar no de destino. Com o conector ativo, também dá para usar ⚙️ → Conectar ao Claude → 🔑 Outro celular.
 
 ## Stack
