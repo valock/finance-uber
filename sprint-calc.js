@@ -33,6 +33,9 @@
       batteryKwh: 39.4, homeKwhPrice: 0,
       bankMonthsNeeded: 4, weeklyHoursCap: 0,
       charges: [], payments: [], deals: [],
+      carChanges: [],        // [{date, type:'eletrico'|'combustao', odo}] troca de carro (vale a partir de date)
+      cars: {},              // {eletrico:{kmPerLiter,fuelPrice}, combustao:{...}} consumo de cada carro
+      weekChecks: {},        // {segunda: {at, odo, carType, battery}} pergunta de km de toda segunda
     };
   }
 
@@ -54,17 +57,36 @@
     });
     (s.payments || []).forEach(p => { if (p && p.odometerKm > 0 && p.date) r.push({ date: p.date, km: p.odometerKm }); });
     if (isDT(s.contractStart) && s.kmDelivery > 0) r.push({ date: dtDate(s.contractStart), km: s.kmDelivery });
+    Object.values(s.weekChecks || {}).forEach(w => { if (w && w.odo > 0 && w.date) r.push({ date: w.date, km: w.odo }); });
+    carChanges(db).forEach(c => { if (c.odo > 0) r.push({ date: c.date, km: c.odo }); });
     return r.filter(x => x.date >= from);
   }
+  // Trocas de carro: cada carro tem o seu odômetro. Leituras de carros diferentes nunca se misturam.
+  function carChanges(db) {
+    return (((db.sprint && db.sprint.carChanges) || []).filter(c => c && c.date)).slice().sort((a, b) => a.date.localeCompare(b.date));
+  }
+  function segStart(db, d) { let st = '0000-00-00'; carChanges(db).forEach(c => { if (c.date <= d) st = c.date; }); return st; }
+  function carTypeOn(db, d) {
+    let t = null; carChanges(db).forEach(c => { if (c.date <= d) t = c.type; });
+    return t || ((db.carSetup && db.carSetup.type) || 'combustao');
+  }
   function lastOdoBefore(db, ds) {
-    const b = readings(db).filter(x => x.date < ds).map(x => x.km);
+    const st = segStart(db, ds);
+    const b = readings(db).filter(x => x.date < ds && x.date >= st).map(x => x.km);
     return b.length ? Math.max(...b) : null;
   }
-  function odoKmBetween(db, ds, de) {
+  function kmPiece(db, ds, de) {
     const inP = readings(db).filter(x => x.date >= ds && x.date <= de).map(x => x.km);
     if (!inP.length) return 0;
     const base = lastOdoBefore(db, ds);
     return Math.max(0, Math.max(...inP) - (base !== null ? base : Math.min(...inP)));
+  }
+  // Km do período somando cada carro separado (corta o período nas datas de troca)
+  function odoKmBetween(db, ds, de) {
+    const cuts = carChanges(db).map(c => c.date).filter(d => d > ds && d <= de);
+    let total = 0, a = ds;
+    cuts.forEach(c => { total += kmPiece(db, a, addDays(c, -1)); a = c; });
+    return total + kmPiece(db, a, de);
   }
   function kmLogInDay(db, d) { return (db.kmLog || []).filter(k => k.date === d).reduce((s, k) => s + (k.km || 0), 0); }
   function dayKm(db, d) {
@@ -126,8 +148,15 @@
     for (let i = 1; i < f.length; i++) { const d = f[i].odometerKm - f[i - 1].odometerKm; if (d > 0) { dist += d; lit += f[i].liters; } }
     return lit > 0 ? dist / lit : null;
   }
-  function estEnergy(db, km) {
-    const car = db.carSetup || {};
+  function carConfig(db, d) {
+    const t = d ? carTypeOn(db, d) : ((db.carSetup && db.carSetup.type) || 'combustao');
+    const cur = db.carSetup || {};
+    if ((cur.type || 'combustao') === t) return cur;
+    const other = (db.sprint && db.sprint.cars && db.sprint.cars[t]) || {};
+    return { ...other, type: t };
+  }
+  function estEnergy(db, km, d) {
+    const car = carConfig(db, d);
     const kmL = (car.type === 'eletrico' ? null : realKmPerLiter(db)) || car.kmPerLiter;
     return kmL > 0 ? (km / kmL) * (car.fuelPrice || 0) : 0;
   }
@@ -145,15 +174,29 @@
   function chargeCost(db, c) { return chargeEnergyCost(db, c) + num(c.idleFee); }
   function chargesIn(db, ds, de) { return ((db.sprint && db.sprint.charges) || []).filter(c => c && c.date >= ds && c.date <= de); }
   // Energia do período: soma das recargas reais; sem nenhuma recarga registrada, estimativa pelo km (marcada)
+  // Estimativa pelo km, usando o consumo do carro de cada trecho (se houve troca de carro no período)
+  function estEnergyBetween(db, ds, de, km) {
+    const cuts = carChanges(db).map(c => c.date).filter(d => d > ds && d <= de);
+    if (!cuts.length) return estEnergy(db, km, de);
+    let total = 0, a = ds;
+    cuts.forEach(c => { total += estEnergy(db, kmPiece(db, a, addDays(c, -1)), a); a = c; });
+    return total + estEnergy(db, kmPiece(db, a, de), de);
+  }
+  function fuelIn(db, ds, de) {
+    const from = sprintFrom(db);
+    return (db.costs || []).filter(c => c.type === 'car' && c.category === 'Combustível' && c.date >= ds && c.date <= de && c.date >= from);
+  }
+  // Energia do período: recargas reais + abastecimentos lançados; sem nenhum registro, estimativa pelo km (marcada)
   function energy(db, ds, de, km) {
-    const list = chargesIn(db, ds, de);
-    if (!list.length) return { cost: estEnergy(db, km), estimated: true, kwh: 0, idle: 0, sessions: 0, missingCost: 0 };
-    let cost = 0, kwh = 0, idle = 0, missing = 0;
+    const list = chargesIn(db, ds, de), fuel = fuelIn(db, ds, de);
+    const fuelCost = fuel.reduce((s, c) => s + (c.amount || 0), 0);
+    if (!list.length && !fuel.length) return { cost: estEnergyBetween(db, ds, de, km), estimated: true, kwh: 0, idle: 0, sessions: 0, missingCost: 0, fuel: 0 };
+    let cost = fuelCost, kwh = 0, idle = 0, missing = 0;
     list.forEach(c => {
       cost += chargeCost(db, c); kwh += chargeKwh(db, c); idle += num(c.idleFee);
       if (chargeEnergyCost(db, c) <= 0) missing++;
     });
-    return { cost, estimated: false, kwh, idle, sessions: list.length, missingCost: missing };
+    return { cost, estimated: false, kwh, idle, sessions: list.length, missingCost: missing, fuel: fuelCost };
   }
 
   // ── Outros gastos do carro (pneu, lavagem, multa…; combustível fica de fora) ──
@@ -301,7 +344,7 @@
       today, ws, we, weekNum, daysLeft,
       gross: g.total, uber: g.uber, n99: g.n99, km,
       revPerKm: km > 0 ? g.total / km : null,
-      energy: en.cost, energyEstimated: en.estimated, energyKwh: en.kwh, idleFees: en.idle, chargeSessions: en.sessions, chargesMissingCost: en.missingCost,
+      energy: en.cost, energyEstimated: en.estimated, energyFuel: en.fuel || 0, energyKwh: en.kwh, idleFees: en.idle, chargeSessions: en.sessions, chargesMissingCost: en.missingCost,
       otherCosts: other.total, otherCostItems: other.items,
       rent, excessKm: excess.over, excessCost: excess.cost, contractWeekN: cw ? cw.n : null,
       net, hasCaution, cashAfter: hasCaution ? net - num(s.cautionWeekly) : null,
@@ -412,7 +455,7 @@
   globalThis.SprintCalc = {
     addDays, mondayOf, daysBetween, isDT, dtDate, addDaysDT, r2, LEAD_IDS, DEAL_STAGES, WEEKDAYS,
     defaults, readings, lastOdoBefore, odoKmBetween, dayKm, gross, work, perHour,
-    estEnergy, chargeKwh, chargeEnergyCost, chargeCost, chargesIn, energy, otherCarCosts,
+    estEnergy, estEnergyBetween, fuelIn, carChanges, carTypeOn, carConfig, segStart, chargeKwh, chargeEnergyCost, chargeCost, chargesIn, energy, otherCarCosts,
     rentWeekly, windows, windowAt, windowKm, windowExcess, odoAt, paymentsSum, contractWeek,
     leadCounts, leadsIn, funnel, day, week, incomeProof, pace, pending, hourly,
   };
