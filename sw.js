@@ -1,10 +1,11 @@
 // FinanceUber Service Worker — funciona offline + notificações
-const CACHE_NAME = 'financeuber-v3';
+const CACHE_NAME = 'financeuber-v4';
 const CHART_JS = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
 const CORE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/sprint-calc.js',
   '/icon-192.png',
   '/icon-512.png',
   CHART_JS
@@ -52,9 +53,10 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  const isAsset = /\.(?:png|jpg|jpeg|svg|webp|woff2?|css|js)$/i.test(url.pathname) && !url.pathname.endsWith('/sw.js');
+  // Imagens e fontes: cache primeiro. O JavaScript do app (sprint-calc.js) vai pela rede primeiro,
+  // para nunca ficar uma versão velha dos cálculos com a página nova.
+  const isAsset = /\.(?:png|jpg|jpeg|svg|webp|woff2?|css)$/i.test(url.pathname);
   if (isAsset) {
-    // Arquivos estáticos: cache primeiro
     e.respondWith(caches.match(req).then(c => c || fetch(req).then(r => putInCache(req, r))));
   } else {
     // Página/JSON: rede primeiro (sempre a versão mais nova), guarda cópia para usar offline
