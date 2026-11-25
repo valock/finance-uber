@@ -789,6 +789,34 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
   </div></div>
 </div>
 
+<!-- 📥 Importar da planilha -->
+<div class="modal" id="modal-planilha">
+  <div class="modal-box"><div class="modal-handle"></div><div class="modal-body" id="sheet-box">
+    <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:4px">📥 Importar da planilha</h3>
+    <p style="font-size:12px;color:#6b7280;margin-bottom:12px;line-height:1.5">A planilha é só a caixa de entrada do seu assistente do WhatsApp. O app lê as linhas novas da aba <strong>entradas</strong> e grava aqui. Linhas já importadas não entram de novo.</p>
+    <div id="sheet-conn" style="display:none;background:#fef3c7;border-radius:10px;padding:10px;font-size:12px;color:#92400e;margin-bottom:12px">Para ler a planilha, ative antes ⚙️ → 🤖 Conectar ao Claude.</div>
+    <div class="form-group"><label class="form-label">Link da planilha (abra a aba "entradas" e copie o link)</label><input type="url" class="form-input" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/…"></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="sheet-auto" style="width:18px;height:18px" onchange="saveSheetSettings()"> Importar sozinho (ao abrir o app e a cada 15 min)</label>
+    <button class="btn-primary" id="sheet-run" onclick="sheetImportNow()">📥 Importar agora</button>
+    <div id="sheet-result" style="margin-top:12px"></div>
+    <details style="margin-top:14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px">
+      <summary style="cursor:pointer;font-size:13px;font-weight:600;color:#111827">📋 Colunas e tipos aceitos</summary>
+      <div style="font-size:12px;color:#374151;line-height:1.6;margin-top:6px">
+        Aba <strong>entradas</strong>: <code>data | tipo | valor | km | observação | importado</code><br>
+        Tipos: ganho_uber, ganho_99, comissao, recarga, aluguel_carro, caucao, custo_carro, outro, fechamento_dia (km obrigatório), lead_uber, lead_organico, lead_parceiro, lead_outros (valor = quantidade), horas_uber, horas_99 (ex.: 6:30), viagens_uber, viagens_99, dinheiro_uber, dinheiro_99, bateria_fim (%), conversas.<br>
+        Compartilhe a planilha como <strong>"Qualquer pessoa com o link: leitor"</strong>.
+      </div>
+    </details>
+    <details style="margin-top:10px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px">
+      <summary style="cursor:pointer;font-size:13px;font-weight:600;color:#111827">🔎 Resumo para o assistente consultar</summary>
+      <div style="font-size:12px;color:#374151;line-height:1.6;margin-top:6px">Numa planilha <strong>separada e privada</strong> (só sua), cole esta fórmula na célula A1. Ela traz o resumo atualizado (semana, meta, km, contrato, pendências) para o assistente ler.</div>
+      <input class="form-input" id="sheet-summary-formula" readonly style="font-size:11px;margin-top:6px">
+      <button class="btn-secondary" style="width:100%;margin-top:6px;text-align:center" onclick="copySummaryFormula()">📋 Copiar fórmula</button>
+    </details>
+    <button class="btn-secondary" style="width:100%;margin-top:12px;text-align:center" onclick="closeModal('modal-planilha')">Fechar</button>
+  </div></div>
+</div>
+
 <!-- Car Setup -->
 <div class="modal" id="modal-car-setup">
   <div class="modal-box"><div class="modal-handle"></div><div class="modal-body">
@@ -872,6 +900,7 @@ main{padding:72px 16px 88px;max-width:500px;margin:0 auto}
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid #f3f4f6">
       <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px">🤖 Conectar ao Claude</div>
       <div id="cloud-box"></div>
+      <button class="btn-secondary" style="width:100%;margin-top:8px;text-align:center" onclick="closeModal('modal-config');openSheetModal()">📥 Importar da planilha (assistente do WhatsApp)</button>
     </div>
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid #f3f4f6">
       <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">🔔 Lembretes</div>
@@ -987,7 +1016,7 @@ function normalizeNewFields(m) {
   if(!Array.isArray(m.sprint.leads)) m.sprint.leads=[];
   if(!m.sprint.days || typeof m.sprint.days!=='object' || Array.isArray(m.sprint.days)) m.sprint.days={};
   ['charges','payments','deals','carChanges'].forEach(k=>{ if(!Array.isArray(m.sprint[k])) m.sprint[k]=[]; });
-  ['cars','weekChecks'].forEach(k=>{ if(!m.sprint[k] || typeof m.sprint[k]!=='object' || Array.isArray(m.sprint[k])) m.sprint[k]={}; });
+  ['cars','weekChecks','sheetImport'].forEach(k=>{ if(!m.sprint[k] || typeof m.sprint[k]!=='object' || Array.isArray(m.sprint[k])) m.sprint[k]={}; });
   if(!m.profile || typeof m.profile!=='object') m.profile={name:'',spouse:''};
   if(!m.carSetup.type) m.carSetup.type='combustao';
   return m;
@@ -2680,6 +2709,7 @@ function renderSprintDashboard() {
   const actions=`<div style="display:flex;gap:8px;margin-bottom:12px">
       <button onclick="openKmModal()" style="${SPRINT_BTN};background:#e0f2fe;color:#0369a1">🛣️ Odômetro</button>
       <button onclick="openIncomeModal()" style="${SPRINT_BTN};background:#d1fae5;color:#059669">💰 Renda</button>
+      ${sheetCfg().url?`<button onclick="openSheetModal()" style="${SPRINT_BTN};background:#f5f3ff;color:#6d28d9">📥 Planilha</button>`:''}
     </div>
     <button onclick="toggleSprintShowAll()" style="width:100%;padding:10px;background:none;border:1.5px dashed #d1d5db;border-radius:12px;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:64px">${sprintShowAll?'▲ Ocultar o resto':'▼ Ver tudo (patrimônio, contas, conquistas…)'}</button>`;
 
@@ -2774,7 +2804,7 @@ function loadFecharDia(d) {
   const hint=document.getElementById('fechar-other-hint');
   if(other.length) {
     hint.style.display='block';
-    hint.innerHTML=`ℹ️ Já lançado neste dia pelo botão Renda: Uber ${fmt(sum(other,'uber'))} · 99 ${fmt(sum(other,'99'))}. Esses valores <strong>já contam</strong>; aqui digite só o que faltar.`;
+    hint.innerHTML=`ℹ️ Já lançado neste dia pelo botão Renda ou pela planilha: Uber ${fmt(sum(other,'uber'))} · 99 ${fmt(sum(other,'99'))}. Esses valores <strong>já contam</strong>; aqui digite só o que faltar.`;
   } else hint.style.display='none';
   // Odômetro de início só aparece quando o dia não foi aberto (ex.: lançando um dia passado)
   const startWrap=document.getElementById('fechar-odo-start-wrap');
@@ -3267,6 +3297,272 @@ function restartFromScratch() {
   db=mkDefault(); saveLocalOnly();   // não envia o banco vazio para o conector
   closeModal('modal-config'); updateHeader(); renderSection('dashboard');
   setTimeout(openSetup,400);
+}
+
+// ============================================================
+// 📥 IMPORTAR DA PLANILHA (caixa de entrada do assistente do WhatsApp)
+// A planilha não substitui o banco: o app lê as linhas novas e grava aqui.
+// ============================================================
+const SHEET_TYPES={
+  ganho_uber:'Ganho Uber', ganho_99:'Ganho 99', comissao:'Comissão', recarga:'Recarga', aluguel_carro:'Aluguel do carro',
+  caucao:'Caução', custo_carro:'Gasto do carro', outro:'Outro gasto', fechamento_dia:'Fechamento do dia',
+  lead_uber:'Lead Dentro do Uber', lead_organico:'Lead orgânico', lead_parceiro:'Lead parceiro', lead_outros:'Lead outros',
+  horas_uber:'Horas online Uber', horas_99:'Horas online 99', viagens_uber:'Viagens Uber', viagens_99:'Viagens 99',
+  dinheiro_uber:'Dinheiro em espécie Uber', dinheiro_99:'Dinheiro em espécie 99', bateria_fim:'Bateria no fim do dia', conversas:'Conversas novas',
+};
+// Tipos que preenchem um campo do dia (o valor substitui o anterior daquele dia)
+const SHEET_DAY_FIELDS={horas_uber:'hoursUber', horas_99:'hours99', viagens_uber:'tripsUber', viagens_99:'trips99',
+  dinheiro_uber:'cashUber', dinheiro_99:'cash99', bateria_fim:'batteryEnd', conversas:'conversations'};
+const SHEET_AUTO_MS=15*60*1000;
+let sheetBusy=false, sheetTimer=null, sheetLastAuto=0;
+function sheetCfg() {
+  const s=db.sprint;
+  if(!s.sheetImport || typeof s.sheetImport!=='object') s.sheetImport={url:'', auto:false, imported:{}, lastRun:null, lastResult:null};
+  if(!s.sheetImport.imported || typeof s.sheetImport.imported!=='object') s.sheetImport.imported={};
+  return s.sheetImport;
+}
+function stripAccents(t) { return String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,''); }
+// CSV com aspas (formato do Google Planilhas)
+function parseCsv(text) {
+  const rows=[]; let row=[], cell='', q=false;
+  text=String(text||'').replace(/^﻿/,'');
+  for(let i=0;i<text.length;i++) {
+    const ch=text[i];
+    if(q) { if(ch==='"') { if(text[i+1]==='"') { cell+='"'; i++; } else q=false; } else cell+=ch; }
+    else if(ch==='"') q=true;
+    else if(ch===',') { row.push(cell); cell=''; }
+    else if(ch==='\n'||ch==='\r') { if(ch==='\r'&&text[i+1]==='\n') i++; row.push(cell); rows.push(row); row=[]; cell=''; }
+    else cell+=ch;
+  }
+  if(cell!==''||row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+// "R$ 1.234,56" · "45,70" · "45.7" · "1,234.56" → número (ou null)
+function parseMoney(v) {
+  let t=String(v??'').trim().replace(/r\$/i,'').replace(/\s/g,'');
+  if(!t) return null;
+  let neg=false; if(/^\(.*\)$/.test(t)) { neg=true; t=t.slice(1,-1); } if(t.startsWith('-')) { neg=true; t=t.slice(1); }
+  if(!/^[\d.,]+$/.test(t)) return null;
+  const lc=t.lastIndexOf(','), ld=t.lastIndexOf('.');
+  if(lc>=0 && ld>=0) t=lc>ld ? t.replace(/\./g,'').replace(',','.') : t.replace(/,/g,'');
+  else if(lc>=0) t=(/^\d{1,3}(,\d{3})+$/.test(t) && !/,\d{1,2}$/.test(t)) ? t.replace(/,/g,'') : t.replace(',','.');
+  else if(ld>=0 && /^\d{1,3}(\.\d{3})+$/.test(t)) t=t.replace(/\./g,'');
+  const n=parseFloat(t);
+  return isFinite(n) ? (neg?-n:n) : null;
+}
+// "24/11/2026" · "24/11/26" · "2026-11-24" · "24-11-2026" → 'AAAA-MM-DD' (ou null)
+function parseSheetDate(v) {
+  const t=String(v??'').trim().split(/[ T]/)[0];
+  let y,m,d, x;
+  if((x=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))) { y=+x[1]; m=+x[2]; d=+x[3]; }
+  else if((x=t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})$/))) { d=+x[1]; m=+x[2]; y=+x[3]; if(y<100) y+=2000; }
+  else return null;
+  const dt=new Date(Date.UTC(y,m-1,d));
+  if(dt.getUTCFullYear()!==y || dt.getUTCMonth()!==m-1 || dt.getUTCDate()!==d) return null;
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+function sheetKey(date,tipo,valor,obs) { return [date,tipo,valor===null?'':valor.toFixed(2),stripAccents(obs).trim().toLowerCase().replace(/\s+/g,' ')].join('|'); }
+const SHEET_COLS={data:['data','dia'], tipo:['tipo'], valor:['valor','valor r$','valor (r$)'], km:['km','odometro','odometro km'], obs:['observacao','obs','observacoes','descricao'], importado:['importado']};
+function sheetHeaderMap(header) {
+  const norm=header.map(h=>stripAccents(h).trim().toLowerCase());
+  const map={};
+  Object.entries(SHEET_COLS).forEach(([k,names])=>{ const i=norm.findIndex(h=>names.includes(h)); if(i>=0) map[k]=i; });
+  return map;
+}
+function costCategoryFromObs(obs) {
+  const o=stripAccents(obs).toLowerCase();
+  if(/lav(agem|a jato|ar)/.test(o)) return 'Lavagem';
+  if(/multa/.test(o)) return 'Multa';
+  if(/estacion|zona azul|parking/.test(o)) return 'Estacionamento';
+  if(/pneu|oficina|mecanic|manuten|borrach|revis|oleo/.test(o)) return 'Manutenção';
+  if(/gasolina|etanol|alcool|combust|posto|diesel/.test(o)) return 'Combustível';
+  return 'Outros';
+}
+// Valida uma linha. Devolve {ok, motivo, item}
+function validateSheetRow(r, map, today) {
+  const get=k=>map[k]!==undefined?String(r[map[k]]??'').trim():'';
+  const raw={data:get('data'), tipo:get('tipo'), valor:get('valor'), km:get('km'), obs:get('obs'), importado:get('importado')};
+  if(!raw.data && !raw.tipo && !raw.valor && !raw.km && !raw.obs) return {empty:true};
+  if(raw.importado) return {skipMarked:true};
+  const date=parseSheetDate(raw.data);
+  if(!date) return {erro:`data "${raw.data||'vazia'}" inválida (use dd/mm/aaaa)`, raw};
+  if(date>today) return {erro:`data ${fmtDate(date)} está no futuro`, raw};
+  if(date<'2020-01-01') return {erro:`data ${raw.data} muito antiga`, raw};
+  const tipo=stripAccents(raw.tipo).trim().toLowerCase().replace(/[\s-]+/g,'_');
+  if(!SHEET_TYPES[tipo]) return {erro:`tipo "${raw.tipo||'vazio'}" não existe`, raw};
+  let valor=parseMoney(raw.valor);
+  let km=null;
+  if(raw.km) { km=parseMoney(raw.km); if(km===null || km<0 || Math.abs(km-Math.round(km))>1e-9) return {erro:`km "${raw.km}" não é um número inteiro`, raw}; km=Math.round(km); }
+  if(tipo==='fechamento_dia') {
+    if(!(km>0)) return {erro:'fechamento_dia precisa do km (odômetro no fim do dia)', raw};
+    if(raw.valor && valor===null) return {erro:`valor "${raw.valor}" não é um número`, raw};
+    valor=valor||0;
+  } else if(SHEET_DAY_FIELDS[tipo]) {
+    if(tipo.startsWith('horas_')) valor=/[:h]/i.test(raw.valor)?parseHours(raw.valor):valor;
+    if(valor===null || !(valor>=0) || (!raw.valor && raw.valor!=='0')) return {erro:`valor "${raw.valor||'vazio'}" não é um número`, raw};
+    if(tipo.startsWith('horas_') && valor>24) return {erro:`${raw.valor} horas não cabem em um dia`, raw};
+    if(tipo==='bateria_fim' && valor>100) return {erro:`bateria ${raw.valor}% acima de 100`, raw};
+    if(/^(viagens_|conversas)/.test(tipo) || tipo==='bateria_fim') { if(Math.abs(valor-Math.round(valor))>1e-9) return {erro:`"${raw.valor}" precisa ser um número inteiro`, raw}; valor=Math.round(valor); }
+    if(tipo.startsWith('horas_')) valor=Math.round(valor*100)/100;
+  } else if(tipo.startsWith('lead_')) {
+    if(valor===null) valor=1;
+    if(valor<1 || valor>50 || Math.abs(valor-Math.round(valor))>1e-9) return {erro:`quantidade de leads "${raw.valor}" inválida (1 a 50)`, raw};
+    valor=Math.round(valor);
+  } else {
+    if(valor===null) return {erro:`valor "${raw.valor||'vazio'}" não é um número`, raw};
+    if(valor<=0) return {erro:`valor ${raw.valor} precisa ser maior que zero`, raw};
+  }
+  return {ok:true, item:{date, tipo, valor, km, obs:raw.obs}, raw};
+}
+// Grava uma linha válida nas estruturas de sempre. Devolve erro (texto) ou null.
+function applySheetItem(it, key) {
+  const s=db.sprint, note=it.obs||'Planilha', src={src:'planilha', sheetKey:key};
+  switch(it.tipo) {
+    case 'ganho_uber': recordIncome({id:uid(), type:'uber', amount:it.valor, date:it.date, note, ...src}); break;
+    case 'ganho_99':   recordIncome({id:uid(), type:'99',   amount:it.valor, date:it.date, note, ...src}); break;
+    case 'comissao':   recordIncome({id:uid(), type:'comissao', amount:it.valor, date:it.date, note, ...src}); break;
+    case 'recarga': {
+      const kind=/\bcasa\b/i.test(stripAccents(it.obs))?'casa':'rua';
+      s.charges.push({id:uid(), date:it.date, at:it.date+'T12:00', place:it.obs||'', kind, kwh:0, energyCost:it.valor, idleFee:0, ...src});
+      break;
+    }
+    case 'aluguel_carro': case 'caucao': {
+      const p={id:uid(), date:it.date, kind:it.tipo==='caucao'?'caucao':'aluguel', amount:it.valor, ...src};
+      if(it.km>0) p.odometerKm=it.km; if(it.obs) p.note=it.obs;
+      s.payments.push(p); break;
+    }
+    case 'custo_carro': {
+      const c={id:uid(), type:'car', category:costCategoryFromObs(it.obs), amount:it.valor, date:it.date, note, ...src};
+      if(it.km>0) c.odometerKm=it.km;
+      db.costs.push(c); break;
+    }
+    case 'outro': db.costs.push({id:uid(), type:'variable', category:'Outros', amount:it.valor, date:it.date, note, ...src}); break;
+    case 'fechamento_dia': {
+      const day=s.days[it.date]||{};
+      const prev=day.odoStart>0?day.odoStart:lastOdoBefore(it.date);
+      if(prev!==null && it.km<prev) return `km ${fmtInt(it.km)} menor que a leitura anterior (${fmtInt(prev)})`;
+      recordKm(it.date, it.km, prev!==null?it.km-prev:0);
+      day.odoEnd=it.km; if(!day.closedAt) day.closedAt=new Date().toISOString();
+      if(it.obs && !day.note) day.note=it.obs;
+      if(/\bfolga\b/i.test(it.obs||'')) day.dayOff=true;
+      s.days[it.date]=day; break;
+    }
+    default: {
+      if(SHEET_DAY_FIELDS[it.tipo]) { const day=s.days[it.date]||{}; day[SHEET_DAY_FIELDS[it.tipo]]=it.valor; s.days[it.date]=day; break; }
+      const source=it.tipo.replace('lead_','');
+      for(let i=0;i<it.valor;i++) s.leads.push({id:uid(), date:it.date, source, at:new Date().toISOString(), ...src});
+    }
+  }
+  return null;
+}
+// Processa o CSV inteiro: valida, ignora duplicadas, grava as novas
+function importSheetCsv(text) {
+  const cfg=sheetCfg(), rows=parseCsv(text);
+  const res={imported:0, duplicates:0, marked:0, errors:[], byType:{}, at:new Date().toISOString()};
+  if(!rows.length) { res.errors.push({line:0, motivo:'planilha vazia'}); return res; }
+  const map=sheetHeaderMap(rows[0]);
+  const missing=['data','tipo','valor'].filter(k=>map[k]===undefined);
+  if(missing.length) { res.errors.push({line:1, motivo:`cabeçalho sem a(s) coluna(s): ${missing.join(', ')}`}); return res; }
+  const today=opDate(), seenNow=new Set();
+  // Fechamentos por último (depois dos ganhos do mesmo dia) e em ordem de data
+  const parsed=rows.slice(1).map((r,i)=>({line:i+2, v:validateSheetRow(r,map,today)}));
+  parsed.sort((a,b)=>{ const fa=a.v.item?.tipo==='fechamento_dia', fb=b.v.item?.tipo==='fechamento_dia'; return fa!==fb?(fa?1:-1):((a.v.item?.date||'').localeCompare(b.v.item?.date||'')||a.line-b.line); });
+  parsed.forEach(({line,v})=>{
+    if(v.empty) return;
+    if(v.skipMarked) { res.marked++; return; }
+    if(v.erro) { res.errors.push({line, motivo:v.erro, raw:v.raw}); return; }
+    const it=v.item, key=sheetKey(it.date,it.tipo,it.valor,it.obs);
+    if(cfg.imported[key] || seenNow.has(key)) { res.duplicates++; return; }
+    const e=applySheetItem(it,key);
+    if(e) { res.errors.push({line, motivo:e, raw:v.raw}); return; }
+    cfg.imported[key]=res.at; seenNow.add(key);
+    res.imported++; res.byType[it.tipo]=(res.byType[it.tipo]||0)+1;
+  });
+  res.errors.sort((a,b)=>a.line-b.line);
+  cfg.lastRun=res.at; cfg.lastResult=res;
+  return res;
+}
+async function fetchSheetCsv(url) {
+  const key=lsGet(CLOUD_KEY);
+  if(!key) throw new Error('Conecte o app primeiro em ⚙️ → 🤖 Conectar ao Claude (a leitura da planilha usa essa conexão).');
+  const r=await fetch('/api/planilha',{method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+key}, body:JSON.stringify({planilha:url, aba:'entradas'})});
+  if(!r.ok) { const j=await r.json().catch(()=>({})); throw new Error(j.erro||('erro '+r.status)); }
+  return r.text();
+}
+async function runSheetImport(opts={}) {
+  const cfg=sheetCfg();
+  if(!cfg.url) { if(!opts.silent) alert('Cole o link da planilha primeiro.'); return null; }
+  if(sheetBusy) return null;
+  sheetBusy=true; updateSheetUI(true);
+  try {
+    const csv=await fetchSheetCsv(cfg.url);
+    const res=importSheetCsv(csv);
+    saveDb();
+    if(res.imported>0) { renderSection(currentSection); flashToast(`📥 ${res.imported} lançamento${res.imported>1?'s':''} da planilha`,'#059669'); }
+    else if(!opts.silent) flashToast(res.errors.length?`⚠️ ${res.errors.length} linha(s) com erro`:'📥 Nada novo na planilha');
+    return res;
+  } catch(e) {
+    cfg.lastRun=new Date().toISOString(); cfg.lastResult={erroGeral:e.message, at:cfg.lastRun};
+    saveLocalOnly();
+    if(!opts.silent) alert('Não deu para importar: '+e.message);
+    return null;
+  } finally { sheetBusy=false; updateSheetUI(); }
+}
+function sheetResultHtml(r) {
+  if(!r) return '<div style="font-size:12px;color:#9ca3af">Ainda não importou.</div>';
+  if(r.erroGeral) return `<div style="font-size:12px;color:#dc2626">❌ ${escHtml(r.erroGeral)}<div style="color:#9ca3af">${fmtDT(nowDT(new Date(r.at)))}</div></div>`;
+  const types=Object.entries(r.byType||{}).map(([k,n])=>`${escHtml(SHEET_TYPES[k]||k)} ${n}`).join(' · ');
+  return `<div style="font-size:12px;color:#374151;line-height:1.6">
+    <div style="color:#9ca3af">Última importação: ${fmtDT(nowDT(new Date(r.at)))}</div>
+    ✅ <strong>${r.imported}</strong> importada${r.imported===1?'':'s'}${types?` <span style="color:#6b7280">(${types})</span>`:''}<br>
+    ⏭️ <strong>${r.duplicates}</strong> já importada${r.duplicates===1?'':'s'} antes${r.marked?` · ${r.marked} marcada${r.marked===1?'':'s'} como importada na planilha`:''}<br>
+    ❌ <strong>${r.errors.length}</strong> com erro${r.errors.length?' (não entraram; corrija na planilha):':''}
+    ${r.errors.map(e=>`<div style="background:#fef2f2;border-radius:8px;padding:6px 8px;margin-top:4px;color:#991b1b">Linha ${e.line}: ${escHtml(e.motivo)}${e.raw?`<div style="color:#9ca3af;font-size:11px">${escHtml([e.raw.data,e.raw.tipo,e.raw.valor,e.raw.km,e.raw.obs].filter(Boolean).join(' · '))}</div>`:''}</div>`).join('')}
+  </div>`;
+}
+function updateSheetUI(busy) {
+  const box=document.getElementById('sheet-box'); if(!box) return;
+  const cfg=sheetCfg();
+  const btn=document.getElementById('sheet-run'); if(btn) { btn.disabled=!!busy; btn.textContent=busy?'⏳ Importando…':'📥 Importar agora'; }
+  const res=document.getElementById('sheet-result'); if(res) res.innerHTML=sheetResultHtml(cfg.lastResult);
+  const conn=document.getElementById('sheet-conn'); if(conn) conn.style.display=lsGet(CLOUD_KEY)?'none':'block';
+}
+async function summaryUrl() { const k=lsGet(CLOUD_KEY); return k?location.origin+'/api/resumo/'+(await readKeyFrom(k)):''; }
+async function openSheetModal() {
+  const cfg=sheetCfg();
+  document.getElementById('sheet-url').value=cfg.url||'';
+  document.getElementById('sheet-auto').checked=!!cfg.auto;
+  updateSheetUI();
+  openModal('modal-planilha');
+  const link=await summaryUrl();
+  document.getElementById('sheet-summary-formula').value=link?`=IMPORTDATA("${link}")`:'Conecte o app ao Claude para gerar o link do resumo.';
+}
+function saveSheetSettings() {
+  const cfg=sheetCfg();
+  const url=document.getElementById('sheet-url').value.trim();
+  if(url && !/docs\.google\.com\/spreadsheets\/d\//.test(url)) return alert('Cole o link do Google Planilhas (docs.google.com/spreadsheets/…).');
+  cfg.url=url; cfg.auto=document.getElementById('sheet-auto').checked;
+  saveDb(); scheduleSheetAuto();
+  return true;
+}
+async function sheetImportNow() { if(saveSheetSettings()!==true) return; await runSheetImport(); }
+async function copySummaryFormula() {
+  const v=document.getElementById('sheet-summary-formula').value;
+  try { await navigator.clipboard.writeText(v); flashToast('📋 Fórmula copiada','#059669'); } catch { prompt('Copie a fórmula:', v); }
+}
+// Automático: ao abrir o app e a cada 15 min com o app aberto
+function scheduleSheetAuto() {
+  clearInterval(sheetTimer); sheetTimer=null;
+  const cfg=sheetCfg();
+  if(!cfg.auto || !cfg.url || !lsGet(CLOUD_KEY)) return;
+  sheetTimer=setInterval(()=>{ if(document.visibilityState==='visible') autoSheetImport(); }, SHEET_AUTO_MS);
+}
+function autoSheetImport() {
+  const cfg=sheetCfg();
+  if(!cfg.auto || !cfg.url || !lsGet(CLOUD_KEY) || !navigator.onLine) return;
+  if(Date.now()-sheetLastAuto<5*60*1000) return;
+  sheetLastAuto=Date.now();
+  runSheetImport({silent:true});
 }
 
 function renderSection(name) {
@@ -4277,10 +4573,12 @@ function init() {
   renderSection('dashboard');
   // Primeira vez (ou ainda sem o passo a passo): pergunta tudo uma vez
   if(!localStorage.getItem(DB_KEY)) saveLocalOnly();
+  // Planilha do assistente: importa ao abrir e a cada 15 min (se estiver ligado)
+  scheduleSheetAuto(); setTimeout(autoSheetImport,2500);
   if(!setupDone()) setTimeout(openSetup,600);
   else setTimeout(maybeAskWeek,700);
   // Toda segunda depois das 04:00: ao voltar para o app, pergunta o km da semana
-  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') setTimeout(()=>{ renderSection(currentSection); maybeAskWeek(); },300); });
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') setTimeout(()=>{ renderSection(currentSection); maybeAskWeek(); autoSheetImport(); },300); });
   // Alterações que ficaram sem enviar (ex.: app fechado sem internet)
   if(lsGet(CLOUD_PENDING)==='1') setTimeout(cloudPush,1500);
 }
