@@ -150,7 +150,7 @@ export function overview(db, meta) {
     perfil: db.profile || {}, metas: db.goals || {},
     carro: { tipo: db.carSetup?.type || 'combustao', consumo: db.carSetup?.kmPerLiter, preco_energia: db.carSetup?.fuelPrice,
       unidade: db.carSetup?.type === 'eletrico' ? 'km/kWh e R$/kWh' : 'km/L e R$/L' },
-    sprint: db.sprint ? { ...db.sprint, leads: undefined, days: undefined, charges: undefined, payments: undefined, deals: undefined } : null,
+    sprint: db.sprint ? { ...db.sprint, leads: undefined, days: undefined, charges: undefined, payments: undefined, deals: undefined, sheetImport: undefined, weekChecks: undefined } : null,
     bancos: banks, saldo_bancos: r2(banks.reduce((s, b) => s + (b.saldo || 0), 0)),
     dividas: debts, total_dividas: r2(debts.reduce((s, d) => s + (d.saldo_devedor || 0), 0)),
     financiamentos: fins, a_receber: pend,
