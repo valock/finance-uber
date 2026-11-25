@@ -17,6 +17,7 @@ App de finanças pessoais para motoristas de Uber/99 e corretores. Tudo fica sal
 - 📋 **Contas a pagar**, 💳 **dívidas**, 🏦 **financiamentos** e **patrimônio**
 - 📊 **Resumo** mensal e auditoria semanal
 - 💾 **Backup**: Exportar/Importar em JSON, com aviso no Início quando passar de 7 dias sem backup
+- 📥 **Importar da planilha**: caixa de entrada no Google Planilhas para um assistente do WhatsApp (ex.: Instinct) lançar ganhos, gastos e o fechamento do dia, e um resumo (`/api/resumo/<chave de leitura>`) para ele consultar. Veja [INSTINCT.md](INSTINCT.md)
 - 🤖 **Conector do Claude**: envio automático dos dados e um servidor MCP só de leitura com 14 ferramentas (resumos, semana do contrato, prova de renda, recargas, ritmo, pendências, funil de vendas, desempenho por hora e mais)
 
 ## Rodar localmente
@@ -31,6 +32,8 @@ O site é estático e o Netlify publica a pasta raiz. As funções em `netlify/f
 
 - `sync.mjs`: `POST /api/setup`, `PUT /api/sync` e `GET /api/sync` (envio e restauração dos dados)
 - `mcp.mjs`: `/mcp/<chave de leitura>` (conector do Claude)
+- `planilha.mjs`: `POST /api/planilha` (lê a planilha-caixa-de-entrada para o app; só endereços do Google Planilhas)
+- `resumo.mjs`: `/api/resumo/<chave de leitura>` (resumo em CSV para `IMPORTDATA`)
 
 Os dados enviados ficam no Netlify Blobs do site.
 
