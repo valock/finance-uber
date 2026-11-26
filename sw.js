@@ -1,11 +1,12 @@
 // FinanceUber Service Worker — funciona offline + notificações
-const CACHE_NAME = 'financeuber-v4';
+const CACHE_NAME = 'financeuber-v5';
 const CHART_JS = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
 const CORE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/sprint-calc.js',
+  '/sheet-import.js',
   '/icon-192.png',
   '/icon-512.png',
   CHART_JS
