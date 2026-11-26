@@ -29,6 +29,7 @@ export const LEAD_SOURCES = { uber: 'Dentro do Uber', organico: 'Orgânico', par
 
 // ── Cálculos do sprint: o MESMO arquivo que o app usa (sprint-calc.js na raiz do site) ──
 import '../../sprint-calc.js';
+import '../../sheet-import.js';
 export const C = globalThis.SprintCalc;
 const dtFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 // Data e hora de agora em Brasília: 'AAAA-MM-DDTHH:MM'
@@ -147,6 +148,7 @@ export function overview(db, meta) {
   const pend = (db.receivables || []).filter(r => r.status === 'pending').map(r => ({ cliente: r.client, valor: r.amount, vencimento: r.dueDate }));
   return {
     ultima_sincronizacao: meta?.savedAt || null,
+    planilha_do_assistente: meta?.planilha || null,
     perfil: db.profile || {}, metas: db.goals || {},
     carro: { tipo: db.carSetup?.type || 'combustao', consumo: db.carSetup?.kmPerLiter, preco_energia: db.carSetup?.fuelPrice,
       unidade: db.carSetup?.type === 'eletrico' ? 'km/kWh e R$/kWh' : 'km/L e R$/L' },

@@ -2,7 +2,8 @@
 //   GET /api/resumo/<chave de leitura>            → CSV "campo,valor"  (use no Google Planilhas: =IMPORTDATA("<link>"))
 //   GET /api/resumo/<chave de leitura>?formato=json
 // Mesma chave do link do conector: só permite LER.
-import { checkReadKey, loadDb } from '../lib/store.mjs';
+import { checkReadKey } from '../lib/store.mjs';
+import { loadWithInbox } from '../lib/sheets.mjs';
 import { opDate, nowDT, weekStats, dayStats, contractWeekOut, incomeProofOut, paceOut, pendingOut, funnelOut, monthStats } from '../lib/core.mjs';
 
 // Valores em texto no formato brasileiro ("R$ 1.234,56"): a planilha em pt-BR não confunde ponto e vírgula
@@ -18,6 +19,10 @@ export function buildSummary(db, meta, now = new Date()) {
   const rows = [
     ['atualizado_em', dt],
     ['ultima_sincronizacao_do_app', meta?.savedAt || ''],
+    ['planilha_lida_em', meta?.planilha?.lida_em || ''],
+    ['planilha_lancamentos_ainda_nao_gravados_no_app', meta?.planilha ? meta.planilha.lancamentos_ainda_nao_gravados_no_app : ''],
+    ['planilha_linhas_com_erro', meta?.planilha ? meta.planilha.linhas_com_erro : ''],
+    ['planilha_erro', meta?.planilha?.erro || ''],
     ['hoje', today],
     ['hoje_bruto', money(d.bruto)], ['hoje_uber', money(d.uber)], ['hoje_99', money(d.n99)],
     ['hoje_km', d.km], ['hoje_rs_por_km', money(d.rs_por_km)], ['hoje_horas', d.horas_online],
@@ -53,7 +58,7 @@ export default async (req, context) => {
   if (!(await checkReadKey(context.params?.key))) return new Response('Not found', { status: 404 });
   if (req.method !== 'GET') return new Response('Method not allowed', { status: 405 });
   try {
-    const { db, meta } = await loadDb();
+    const { db, meta } = await loadWithInbox();
     if (!db) return new Response('campo,valor\nerro,"ainda não há dados: ative a conexão no app"\n', { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8' } });
     const rows = buildSummary(db, meta);
     if (new URL(req.url).searchParams.get('formato') === 'json') {

@@ -33,3 +33,7 @@ export async function loadDb() {
   const [db, meta] = await Promise.all([store().get('db', { type: 'json' }), store().get('meta', { type: 'json' })]);
   return { db, meta };
 }
+
+// Última leitura da planilha-caixa-de-entrada: { url, csv, fetchedAt, erro? }
+export async function getSheetCache() { return store().get('planilha-cache', { type: 'json' }); }
+export async function setSheetCache(v) { await store().setJSON('planilha-cache', v); }
