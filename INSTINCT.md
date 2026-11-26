@@ -9,6 +9,10 @@ O Instinct (assistente de IA no WhatsApp) lê e escreve no Google Planilhas. A l
 
 A planilha não substitui o banco: o app lê as linhas novas e grava no banco dele. Linhas já importadas nunca entram de novo.
 
+**Sempre atualizado, mesmo com o celular fechado:** o site lê a caixa de entrada sozinho a cada 15 minutos (e também na hora de
+uma consulta, se a última leitura tiver mais de 10 minutos). O resumo e o conector do Claude já somam o que o Instinct lançou.
+Quando você abre o app, ele grava essas mesmas linhas no banco, sem duplicar.
+
 ## 1. Caixa de entrada
 
 1. Crie uma planilha, renomeie a primeira aba para `entradas` e escreva na linha 1:
@@ -47,7 +51,7 @@ Regras da importação:
   Dois gastos iguais no mesmo dia: mude a observação (ex.: `lanche manhã` e `lanche tarde`).
 - Para os campos do dia (horas, viagens, dinheiro, bateria, conversas) o valor novo substitui o anterior daquele dia.
 - Linhas com erro não entram; o app lista a linha e o motivo para corrigir.
-- Importação automática: ao abrir o app e a cada 15 minutos com ele aberto.
+- No app: importa ao abrir e a cada 15 minutos com ele aberto. No site: lê a planilha a cada 15 minutos, sempre.
 
 ## 2. Resumo (para o Instinct consultar)
 
@@ -93,8 +97,9 @@ ROTINA (horário de Brasília)
 
 CONSULTAS
 - Para qualquer pergunta sobre a semana, meta, km, contrato, mês ou pendências, leia a aba "resumo" e responda com os números de lá.
-- Diga o horário de "atualizado_em" quando a pergunta for sobre hoje (o resumo atualiza mais ou menos a cada hora
-  e o app precisa ter sido aberto para importar o que você lançou).
+- O resumo já inclui o que você lançou na planilha (o site lê a planilha a cada 15 minutos). A própria planilha de resumo
+  se atualiza mais ou menos a cada hora: se acabou de lançar algo, diga que o número pode levar um pouco para aparecer.
+- Se "planilha_linhas_com_erro" for maior que 0, avise que há linhas para corrigir na caixa de entrada.
 - Exemplos: "quanto falta pra meta?" → falta_para_meta e por_dia_para_meta; "quanto km ainda posso rodar?" → contrato_km_disponivel_por_dia;
   "tem algo pendente?" → dias_sem_fechamento e alertas.
 
@@ -107,7 +112,7 @@ MENSAGENS PARA OUTRAS PESSOAS
 
 ## Perguntas frequentes
 
-- **Lancei pelo WhatsApp e não apareceu no app.** O app importa quando está aberto. Abra o app ou toque em 📥 Planilha → Importar agora.
+- **Lancei pelo WhatsApp e não apareceu no app.** O app grava quando está aberto (ou toque em 📥 Planilha → Importar agora). O resumo e o Claude já contam mesmo antes, em até 15 minutos.
 - **Uma linha ficou com erro.** Corrija a linha na planilha (data, tipo ou valor). Na próxima importação ela entra.
 - **Lancei um ganho pelo WhatsApp e também no "Fechar o dia".** O Fechar o dia avisa quando já existe ganho da planilha naquele dia; digite lá só o que faltar.
 - **Quero tirar um lançamento importado.** Apague no app (ele não volta, porque a linha já foi marcada como importada).

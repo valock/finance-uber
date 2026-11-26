@@ -34,6 +34,7 @@ O site é estático e o Netlify publica a pasta raiz. As funções em `netlify/f
 - `mcp.mjs`: `/mcp/<chave de leitura>` (conector do Claude)
 - `planilha.mjs`: `POST /api/planilha` (lê a planilha-caixa-de-entrada para o app; só endereços do Google Planilhas)
 - `resumo.mjs`: `/api/resumo/<chave de leitura>` (resumo em CSV para `IMPORTDATA`)
+- `planilha-agendada.mjs`: a cada 15 min lê a planilha do assistente; o resumo e o conector somam as linhas novas mesmo com o app fechado
 
 Os dados enviados ficam no Netlify Blobs do site.
 
